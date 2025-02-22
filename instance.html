@@ -86,83 +86,42 @@
                     indexURL: "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/"
                 });
 
-                // Replace Python HTTP server with simple sharing mechanism
-                await pyodide.runPythonAsync(`
-                    import random
-                    def generate_share_url():
-                        # Generate a random room ID
-                        room_id = ''.join(random.choices('0123456789ABCDEF', k=6))
-                        base_url = str(location.href.split('#')[0])
-                        return f"{base_url}?room={room_id}"
-                `);
+                // Keep chat container visible
+                chatContainer.style.display = 'block';
 
-                // Update server button functionality
-                const serverButton = document.createElement('button');
-                serverButton.innerText = 'Create Sharing Link';
-                serverButton.onclick = async () => {
-                    try {
-                        const shareUrl = await pyodide.runPythonAsync('generate_share_url()');
-                        const qrHtml = `
-                            <div style="padding:20px;">
-                                <p>Share this link with others:</p>
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}"/>
-                                <p style="word-break:break-all;">Or use: ${shareUrl}</p>
-                            </div>
-                        `;
-                        window.updateQRCode(qrHtml);
-                        addMessage(`Share this URL with others: ${shareUrl}`, "received");
-                    } catch (err) {
-                        addMessage(`Share error: ${err.message}`, "received");
-                    }
-                };
-                document.getElementById('qrSection').insertBefore(serverButton, document.getElementById('qrcode'));
-
-                // Create minimal IPFS node without listeners initially
+                // Create minimal IPFS node with simplified config
                 status.textContent = "Creating IPFS node...";
                 const ipfs = await IpfsCore.create({
                     repo: 'ipfs-' + Math.random(),
                     config: {
-                        Addresses: {
-                            Swarm: []  // Start with no listeners
-                        },
-                        Discovery: {
-                            webRTCStar: {
-                                Enabled: false  // Disabled initially
-                            }
-                        }
+                        Addresses: { Swarm: [] },
+                        Discovery: { webRTCStar: { Enabled: false } },
+                        Bootstrap: [],  // Disable bootstrap nodes
+                        Routing: { Type: 'none' }  // Disable DHT
                     }
                 });
                 window.ipfs = ipfs;
 
-                // Function to enable networking when needed
-                async function enableNetworking() {
-                    await ipfs.config.set('Addresses.Swarm', [
-                        '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
-                    ]);
-                    await ipfs.config.set('Discovery.webRTCStar.Enabled', true);
-                }
-
-                // Only enable networking when connecting to a peer
+                // Handle connections
                 const hashPeerId = window.location.hash.slice(1);
                 if (hashPeerId) {
                     try {
                         status.textContent = "Connecting to peer...";
-                        await enableNetworking();
+                        await ipfs.config.set('Addresses.Swarm', [
+                            '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
+                        ]);
+                        await ipfs.config.set('Discovery.webRTCStar.Enabled', true);
                         await ipfs.swarm.connect(`/p2p/${hashPeerId}`);
                         status.textContent = "Connected!";
-                        addMessage(`Connected to: ${hashPeerId}`, "received");
+                        chatContainer.style.display = 'block';
                     } catch (err) {
                         status.textContent = `Connection failed: ${err.message}`;
                     }
                 } else {
-                    // Just show the peer ID for sharing
-                    const peerId = (await ipfs.id()).id;
-                    status.textContent = `Your peer ID: ${peerId}`;
-                    addMessage("Share this ID with others to connect:", "received");
-                    addMessage(peerId, "received");
+                    status.textContent = "";
                 }
 
-                // Initialize Python and create global manager
+                // Initialize Python with fixed syntax
                 window.manager = await pyodide.runPythonAsync(`
                     import math
                     import random
@@ -179,7 +138,23 @@
                     class IPFSManager:
                         def __init__(self):
                             self.calculator = Calculator()
-                            self.instance_id = f"Instance_{random.randint(1000, 9999)}"
+                        
+                        async def share_instance(self):
+                            try:
+                                peer_id = (await ipfs.id()).id
+                                # Use download helper page
+                                download_url = f"https://raw.githubusercontent.com/hannesnortje/DObject/master/download.html#{peer_id}"
+                                
+                                window.updateQRCode(f'''
+                                    <div style="padding:20px;">
+                                        <h3>Scan to Connect:</h3>
+                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={download_url}"/>
+                                        <p>1. Scan QR code</p>
+                                        <p>2. Open downloaded file</p>
+                                    </div>
+                                ''')
+                            except Exception as e:
+                                window.updateStatus(f"Share error: {str(e)}")
                         
                         async def init_ipfs(self):
                             async def handle_message(msg):
@@ -204,15 +179,6 @@
                                     window.updateStatus(f"Message error: {str(e)}")
                             
                             await ipfs.pubsub.subscribe('pi-calc', create_proxy(handle_message))
-                            return self.instance_id
-
-                        async def share_instance(self):
-                            try:
-                                peer_id = (await ipfs.id()).id
-                                share_url = f"{location.href.split('#')[0]}#{peer_id}"
-                                window.updateQRCode(f'<div style="padding:20px;"><p>Scan to connect:</p><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={share_url}"/><p>Or use: {share_url}</p></div>')
-                            except Exception as e:
-                                window.updateStatus(f"Share error: {str(e)}")
                         
                         async def send_message(self, content):
                             await ipfs.pubsub.publish(
@@ -221,15 +187,16 @@
                             )
                             window.addMessage(f"Sent: {content}", "sent")
 
-                    # Create and initialize manager, make it available globally
+                    # Create and initialize manager
+                    calculator = Calculator()
                     manager = IPFSManager()
                     await manager.init_ipfs()
                     manager  # Return manager to JavaScript
                 `);
 
             } catch (err) {
-                status.textContent = `Initialization error: ${err.message}`;
-                console.error('Initialization error:', err);
+                status.textContent = `Error: ${err.message}`;
+                console.error('Error:', err);
             }
         }
 
@@ -247,6 +214,25 @@
             await pyodide.runPythonAsync(`
                 await manager.share_instance()
             `);
+        }
+
+        // Add auto-download handling for new instances
+        if (window.location.hash && !window.downloaded) {
+            window.downloaded = true;
+            const currentUrl = window.location.href;
+            fetch('https://raw.githubusercontent.com/hannesnortje/DObject/master/instance.html')
+                .then(response => response.text())
+                .then(content => {
+                    const blob = new Blob([content], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'calculator_instance.html';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                });
         }
 
         init().catch(console.error);

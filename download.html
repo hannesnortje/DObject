@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Downloading Calculator...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <div style="text-align: center; padding: 20px;">
+        <h2>Downloading Calculator...</h2>
+        <p>The file will download automatically.</p>
+        <p>Once downloaded, please open it to connect.</p>
+    </div>
+    <script>
+        // Get peer ID from URL
+        const peerId = window.location.hash.slice(1);
+        
+        // Download and save the instance
+        fetch('https://raw.githubusercontent.com/hannesnortje/DObject/master/instance.html')
+            .then(response => response.text())
+            .then(content => {
+                // Create download link
+                const blob = new Blob([content], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `calculator_${peerId.slice(0,8)}.html`;
+                
+                // Force download on mobile
+                if (/Android|iPhone/i.test(navigator.userAgent)) {
+                    a.setAttribute('target', '_blank');
+                    a.setAttribute('rel', 'noopener');
+                }
+                
+                document.body.appendChild(a);
+                a.click();
+                
+                // Cleanup
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 1000);
+            });
+    </script>
+</body>
+</html>
