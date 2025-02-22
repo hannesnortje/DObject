@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>π Calculator Instance</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 10px; }
+        #chatContainer { border: 1px solid #ddd; border-radius: 5px; height: 400px; overflow-y: auto; padding: 10px; }
+        .message { margin: 10px 0; padding: 8px 12px; border-radius: 5px; max-width: 70%; }
+        .sent { background: #007bff; color: white; margin-left: auto; }
+        .received { background: #e9ecef; color: #333; margin-right: auto; }
+        #messageForm { display: flex; margin-top: 10px; }
+        #messageInput { flex-grow: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px 0 0 5px; }
+        #sendButton { padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 0 5px 5px 0; }
+        #qrSection {
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        #shareButton {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        #qrcode {
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            max-width: 300px;
+        }
+        #qrcode svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>π Calculator Instance</h1>
+    <div id="qrSection">
+        <button id="shareButton" onclick="shareInstance()">Share Instance</button>
+        <div id="qrcode"></div>
+    </div>
+    <div id="status"></div>
+    <div id="chatContainer"></div>
+    <form id="messageForm" onsubmit="sendMessage(event)">
+        <input id="messageInput" type="text" placeholder="Enter a number..." autocomplete="off">
+        <button id="sendButton" type="submit">Send</button>
+    </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+    <script src="https://unpkg.com/ipfs-core@0.18.0/dist/index.min.js"></script>
+    
+    <script type="text/javascript">
+        let pyodide;
+        const chatContainer = document.getElementById("chatContainer");
+        const status = document.getElementById("status");
+
+        // Basic UI functions
+        window.addMessage = (text, type) => {
+            const div = document.createElement("div");
+            div.className = `message ${type}`;
+            div.innerText = text;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        };
+        window.updateStatus = (text) => status.textContent = text;
+        window.updateQRCode = (svgContent) => {
+            const qrDiv = document.getElementById('qrcode');
+            qrDiv.innerHTML = svgContent;
+        };
+
+        async function init() {
+            try {
+                status.textContent = "Loading Pyodide...";
+                pyodide = await loadPyodide({
+                    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/"
+                });
+
+                // Replace Python HTTP server with simple sharing mechanism
+                await pyodide.runPythonAsync(`
+                    import random
+                    def generate_share_url():
+                        # Generate a random room ID
+                        room_id = ''.join(random.choices('0123456789ABCDEF', k=6))
+                        base_url = str(location.href.split('#')[0])
+                        return f"{base_url}?room={room_id}"
+                `);
+
+                // Update server button functionality
+                const serverButton = document.createElement('button');
+                serverButton.innerText = 'Create Sharing Link';
+                serverButton.onclick = async () => {
+                    try {
+                        const shareUrl = await pyodide.runPythonAsync('generate_share_url()');
+                        const qrHtml = `
+                            <div style="padding:20px;">
+                                <p>Share this link with others:</p>
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}"/>
+                                <p style="word-break:break-all;">Or use: ${shareUrl}</p>
+                            </div>
+                        `;
+                        window.updateQRCode(qrHtml);
+                        addMessage(`Share this URL with others: ${shareUrl}`, "received");
+                    } catch (err) {
+                        addMessage(`Share error: ${err.message}`, "received");
+                    }
+                };
+                document.getElementById('qrSection').insertBefore(serverButton, document.getElementById('qrcode'));
+
+                // Create minimal IPFS node without listeners initially
+                status.textContent = "Creating IPFS node...";
+                const ipfs = await IpfsCore.create({
+                    repo: 'ipfs-' + Math.random(),
+                    config: {
+                        Addresses: {
+                            Swarm: []  // Start with no listeners
+                        },
+                        Discovery: {
+                            webRTCStar: {
+                                Enabled: false  // Disabled initially
+                            }
+                        }
+                    }
+                });
+                window.ipfs = ipfs;
+
+                // Function to enable networking when needed
+                async function enableNetworking() {
+                    await ipfs.config.set('Addresses.Swarm', [
+                        '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
+                    ]);
+                    await ipfs.config.set('Discovery.webRTCStar.Enabled', true);
+                }
+
+                // Only enable networking when connecting to a peer
+                const hashPeerId = window.location.hash.slice(1);
+                if (hashPeerId) {
+                    try {
+                        status.textContent = "Connecting to peer...";
+                        await enableNetworking();
+                        await ipfs.swarm.connect(`/p2p/${hashPeerId}`);
+                        status.textContent = "Connected!";
+                        addMessage(`Connected to: ${hashPeerId}`, "received");
+                    } catch (err) {
+                        status.textContent = `Connection failed: ${err.message}`;
+                    }
+                } else {
+                    // Just show the peer ID for sharing
+                    const peerId = (await ipfs.id()).id;
+                    status.textContent = `Your peer ID: ${peerId}`;
+                    addMessage("Share this ID with others to connect:", "received");
+                    addMessage(peerId, "received");
+                }
+
+                // Initialize Python and create global manager
+                window.manager = await pyodide.runPythonAsync(`
+                    import math
+                    import random
+                    from pyodide.ffi import create_proxy, to_js
+                    from js import window, ipfs, TextEncoder, TextDecoder, location
+
+                    class Calculator:
+                        def calculate(self, num):
+                            try:
+                                return f"π * {num} = {float(num) * math.pi}"
+                            except:
+                                return "Invalid number!"
+
+                    class IPFSManager:
+                        def __init__(self):
+                            self.calculator = Calculator()
+                            self.instance_id = f"Instance_{random.randint(1000, 9999)}"
+                        
+                        async def init_ipfs(self):
+                            async def handle_message(msg):
+                                try:
+                                    message = TextDecoder.new().decode(msg.data)
+                                    from_id = msg.from_
+                                    my_id = (await ipfs.id()).id
+                                    
+                                    if from_id != my_id:
+                                        content, msg_type = message.split("|")
+                                        if msg_type == "calc":
+                                            result = self.calculator.calculate(content)
+                                            await ipfs.pubsub.publish(
+                                                'pi-calc',
+                                                TextEncoder.new().encode(f"{result}|result")
+                                            )
+                                            window.addMessage(f"Calculating: {content}", "received")
+                                            window.addMessage(f"Result: {result}", "sent")
+                                        elif msg_type == "result":
+                                            window.addMessage(f"Received: {content}", "received")
+                                except Exception as e:
+                                    window.updateStatus(f"Message error: {str(e)}")
+                            
+                            await ipfs.pubsub.subscribe('pi-calc', create_proxy(handle_message))
+                            return self.instance_id
+
+                        async def share_instance(self):
+                            try:
+                                peer_id = (await ipfs.id()).id
+                                share_url = f"{location.href.split('#')[0]}#{peer_id}"
+                                window.updateQRCode(f'<div style="padding:20px;"><p>Scan to connect:</p><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={share_url}"/><p>Or use: {share_url}</p></div>')
+                            except Exception as e:
+                                window.updateStatus(f"Share error: {str(e)}")
+                        
+                        async def send_message(self, content):
+                            await ipfs.pubsub.publish(
+                                'pi-calc',
+                                TextEncoder.new().encode(f"{content}|calc")
+                            )
+                            window.addMessage(f"Sent: {content}", "sent")
+
+                    # Create and initialize manager, make it available globally
+                    manager = IPFSManager()
+                    await manager.init_ipfs()
+                    manager  # Return manager to JavaScript
+                `);
+
+            } catch (err) {
+                status.textContent = `Initialization error: ${err.message}`;
+                console.error('Initialization error:', err);
+            }
+        }
+
+        async function sendMessage(event) {
+            event.preventDefault();
+            const message = document.getElementById("messageInput").value.trim();
+            if (!message) return;
+            document.getElementById("messageInput").value = "";
+            await pyodide.runPythonAsync(`
+                await manager.send_message("${message}")
+            `);
+        }
+
+        async function shareInstance() {
+            await pyodide.runPythonAsync(`
+                await manager.share_instance()
+            `);
+        }
+
+        init().catch(console.error);
+    </script>
+</body>
+</html>
