@@ -922,29 +922,36 @@
         conn.on('error', (err) => {
             console.error('Connection error:', err);
             window.peerState.isConnected = false;
-            window.updateStatus('Connection error. Please try again.');
+            window.updateStatus('Connection error. Converting to sharing instance.');
+            
+            // Convert to sharing instance on error
+            setTimeout(convertToSharingInstance, 1000);
         });
 
         conn.on('close', () => {
             console.log('Connection closed');
             window.peerState.isConnected = false;
             window.connection = null;
-            window.updateStatus('Connection lost. Retrying...');
-            // Auto-retry connection if we have a peer ID
+            
+            // If we have a peerId to try reconnecting
             if (window.peerState.peerId) {
+                window.updateStatus('Connection lost. Retrying...');
                 setTimeout(() => {
-                    const newConn = peer.connect(window.peerState.peerId, {
-                        reliable: true,
-                        serialization: 'json'
-                    });
-                    setupConnection(newConn);
+                    try {
+                        const newConn = peer.connect(window.peerState.peerId, {
+                            reliable: true,
+                            serialization: 'json'
+                        });
+                        setupConnection(newConn);
+                    } catch (err) {
+                        console.error('Reconnection failed:', err);
+                        // Convert to sharing after failed retry
+                        convertToSharingInstance();
+                    }
                 }, 1000);
             } else {
-                // If no peer ID is set, become a sharing instance
-                document.getElementById("shareButton").disabled = false;
-                document.getElementById("shareButton").style.display = 'block';
-                document.getElementById("qrSection").style.display = 'block';
-                window.updateStatus("Ready! Share this instance with others.");
+                // If no peer ID, immediately become a sharing instance
+                convertToSharingInstance();
             }
         });
     }
@@ -1167,28 +1174,47 @@
                 window.updateStatus("Connecting to original instance...");
 
                 try {
-                    connection = peer.connect(targetPeerId, {
-                        reliable: true,
-                        serialization: 'json'
+                    // Create a connection timeout promise
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error("Connection timeout")), 5000);
                     });
-                    setupConnection(connection);
                     
-                    // Set a timeout to check if connection was successful
-                    setTimeout(() => {
-                        if (!window.peerState.isConnected) {
-                            window.updateStatus("Connection failed. Becoming a sharing instance.");
-                            // If connection failed, become a sharing instance
-                            document.getElementById("shareButton").disabled = false;
-                            document.getElementById("shareButton").style.display = 'block';
-                            document.getElementById("qrSection").style.display = 'block';
+                    // Create connection promise
+                    const connectionPromise = new Promise((resolve, reject) => {
+                        try {
+                            connection = peer.connect(targetPeerId, {
+                                reliable: true,
+                                serialization: 'json'
+                            });
+                            
+                            // Handle connection open event
+                            connection.on('open', () => {
+                                window.peerState.isConnected = true;
+                                resolve(connection);
+                            });
+                            
+                            // Handle connection error
+                            connection.on('error', (err) => {
+                                reject(err);
+                            });
+                            
+                            // Initial setup
+                            setupConnection(connection);
+                        } catch(err) {
+                            reject(err);
                         }
-                    }, 5000); // 5 seconds timeout
+                    });
+                    
+                    // Race between connection and timeout
+                    await Promise.race([connectionPromise, timeoutPromise]);
+                    
+                    // If we get here without an exception, connection was successful
+                    console.log("Connection established successfully");
+                    
                 } catch (err) {
+                    console.error("Connection failed:", err);
                     window.updateStatus("Connection failed. Becoming a sharing instance.");
-                    // If connection failed, become a sharing instance
-                    document.getElementById("shareButton").disabled = false;
-                    document.getElementById("shareButton").style.display = 'block';
-                    document.getElementById("qrSection").style.display = 'block';
+                    convertToSharingInstance();
                 }
             } else {
                 // This is the original instance
@@ -1200,9 +1226,7 @@
             console.error(err);
             
             // On any error, ensure we can share this instance
-            document.getElementById("shareButton").disabled = false;
-            document.getElementById("shareButton").style.display = 'block';
-            document.getElementById("qrSection").style.display = 'block';
+            convertToSharingInstance();
         }
     }
 
@@ -1827,6 +1851,35 @@
             window.piViz.clearValues();
         });
     });
+
+    // Add a function to convert to sharing mode
+    function convertToSharingInstance() {
+        // Clear any existing connection attempts
+        if (connection) {
+            try {
+                connection.close();
+            } catch (e) {
+                console.log("Error closing connection:", e);
+            }
+            connection = null;
+        }
+        
+        // Clear any stored peer ID from the failed connection
+        window.peerState.peerId = null;
+        window.peerState.isConnected = false;
+        window.peerState.isConnecting = false;
+        
+        // Show sharing UI
+        document.getElementById("shareButton").disabled = false;
+        document.getElementById("shareButton").style.display = 'block';
+        document.getElementById("qrSection").style.display = 'block';
+        
+        // Enable chat form for local calculation mode
+        document.getElementById("messageForm").style.display = 'flex';
+        document.getElementById("chatContainer").style.display = 'block';
+        
+        window.updateStatus("Ready! Share this instance with others or calculate locally.");
+    }
 </script>
 </body>
 </html>
