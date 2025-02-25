@@ -1,19 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>π Calculator Instance</title>
     <style>
-        /* ... (your CSS - no changes needed here) ... */
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 10px; }
-        #chatContainer { border: 1px solid #ddd; border-radius: 5px; height: 400px; overflow-y: auto; padding: 10px; }
-        .message { margin: 10px 0; padding: 8px 12px; border-radius: 5px; max-width: 70%; }
-        .sent { background: #007bff; color: white; margin-left: auto; }
-        .received { background: #e9ecef; color: #333; margin-right: auto; }
-        #messageForm { display: flex; margin-top: 10px; }
-        #messageInput { flex-grow: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px 0 0 5px; }
-        #sendButton { padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 0 5px 5px 0; }
+        /* Base styles */
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --success-color: #4cc9f0;
+            --warning-color: #f72585;
+            --light-bg: #f8f9fa;
+            --dark-text: #212529;
+            --light-text: #f8f9fa;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f2f5;
+            color: var(--dark-text);
+            line-height: 1.6;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+            font-size: 2.5rem;
+        }
+        
+        /* Chat container styling */
+        #chatContainer {
+            border: none;
+            border-radius: var(--border-radius);
+            height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: white;
+            box-shadow: var(--box-shadow);
+            scrollbar-width: thin;
+        }
+        
+        #chatContainer::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        #chatContainer::-webkit-scrollbar-thumb {
+            background-color: #cbd5e0;
+            border-radius: 3px;
+        }
+        
+        .message {
+            margin: 12px 0;
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 75%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .sent {
+            background: var(--primary-color);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .received {
+            background: white;
+            color: var(--dark-text);
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        /* Message form styling */
+        #messageForm {
+            display: flex;
+            margin-top: 15px;
+        }
+        
+        #messageInput {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        #messageInput:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.25);
+        }
+        
+        #sendButton {
+            padding: 12px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        #sendButton:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        /* Visualization styling */
+        .visualization-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .visualization-section > div {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        #visualizationContainer {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+        }
+        
+        #piCanvas {
+            border: none;
+            border-radius: var(--border-radius);
+            background-color: #fdfdfd;
+            max-width: 100%;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .canvas-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .canvas-controls button {
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            border: 1px solid #e2e8f0;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .canvas-controls button:hover {
+            background: #f7fafc;
+            transform: translateY(-1px);
+        }
+        
+        .canvas-controls button.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 4px rgba(66, 153, 225, 0.25);
+        }
+        
+        .pattern-info {
+            margin: 15px auto;
+            padding: 15px;
+            background: #ebf8ff;
+            border-left: 4px solid var(--primary-color);
+            border-radius: 4px;
+            font-size: 0.95em;
+            line-height: 1.5;
+            color: #2c5282;
+        }
+        
+        /* QR code and sharing section */
         #qrSection {
             text-align: center;
             margin: 20px 0;
@@ -251,55 +432,31 @@
             color: #4caf50;
             font-weight: bold;
         }
-
-        /* New visualization styles */
-        #visualizationContainer {
-            margin: 20px 0;
-            text-align: center;
+        
+        /* Status indicator */
+        #status {
+            margin-bottom: 10px;
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            background: #e6fffa;
+            color: #319795;
+            display: inline-block;
         }
         
-        #piCanvas {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f8f9fa;
-            max-width: 100%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .canvas-container {
-            position: relative;
-            margin: 0 auto;
-            max-width: 600px;
-        }
-        
-        .canvas-controls {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 10px 0;
-        }
-        
-        .canvas-controls button {
-            padding: 5px 10px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            background: white;
-            cursor: pointer;
-        }
-        
-        .canvas-controls button.active {
-            background: #007bff;
-            color: white;
-        }
-        
-        .pattern-info {
-            margin: 10px auto;
-            max-width: 600px;
-            padding: 10px;
-            background: #f0f8ff;
-            border-radius: 5px;
-            font-size: 0.9em;
-            line-height: 1.4;
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .visualization-section {
+                flex-direction: column;
+            }
+            
+            #chatContainer {
+                height: 300px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
@@ -309,25 +466,10 @@
     <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://accounts.google.com/gsi/client"></script>
 </head>
+
 <body>
     <h1>π Calculator Instance</h1>
-    
-    <!-- Add visualization section -->
-    <div id="visualizationContainer">
-        <div class="canvas-container">
-            <canvas id="piCanvas" width="600" height="400"></canvas>
-        </div>
-        <div class="canvas-controls">
-            <button id="patternCircle" class="active">Circle Pattern</button>
-            <button id="patternSpiral">Spiral Pattern</button>
-            <button id="patternWave">Wave Pattern</button>
-            <button id="clearCanvas">Clear</button>
-        </div>
-        <div class="pattern-info">
-            This visualization uses π to create mathematical patterns. Each calculation adds points to the pattern. Try sending different numbers to see how the pattern evolves!
-        </div>
-    </div>
-    
+
     <div id="qrSection">
         <button id="shareButton" onclick="prepareSharing()" disabled>Share Instance</button>
         
@@ -488,609 +630,630 @@
         </div>
         <div id="copied-alert">Link copied to clipboard!</div>
     </div>
-    <div id="status"></div>
-    <div id="chatContainer"></div>
-    <form id="messageForm" onsubmit="sendMessage(event)">
-        <input id="messageInput" type="text" placeholder="Enter a number..." autocomplete="off">
-        <button id="sendButton" type="submit">Send</button>
-    </form>
+    <!-- Add visualization section -->
+    <div class="visualization-section">        
+        <div>
+            <div id="status"></div>
+            <div id="chatContainer"></div>
+            <form id="messageForm" onsubmit="sendMessage(event)">
+                <input id="messageInput" type="text" placeholder="Enter a number..." autocomplete="off">
+                <button id="sendButton" type="submit">Send</button>
+            </form>
+        </div>
+        <div id="visualizationContainer">
+            <div class="canvas-container">
+                <canvas id="piCanvas" width="600" height="400"></canvas>
+            </div>
+            <div class="canvas-controls">
+                <button id="patternCircle" class="active">Circle Pattern</button>
+                <button id="patternSpiral">Spiral Pattern</button>
+                <button id="patternWave">Wave Pattern</button>
+                <button id="clearCanvas">Clear</button>
+            </div>
+            <div class="pattern-info">
+                This visualization uses π to create mathematical patterns. Each calculation adds points to the pattern.
+                Try
+                sending different numbers to see how the pattern evolves!
+            </div>
+        </div>
+    </div>
 
-<script type="text/javascript">
-    let pyodide;
-    let peer;
-    let connection;
-    const chatContainer = document.getElementById("chatContainer");
-    const status = document.getElementById("status");
-    let manager = null;
+    <script type="text/javascript">
+        let pyodide;
+        let peer;
+        let connection;
+        const chatContainer = document.getElementById("chatContainer");
+        const status = document.getElementById("status");
+        let manager = null;
 
-    // Make filename constant available to Python
-    window.CALCULATOR_FILENAME = 'calculator_instance.html';
-    
-    // Visualization variables
-    const canvas = document.getElementById('piCanvas');
-    const ctx = canvas.getContext('2d');
-    let currentPattern = 'circle';
-    let piPoints = [];
-    let animationFrameId = null;
-    let hue = 0;
-    
-    // Pi visualization system
-    window.piViz = {
-        // Store calculated values for visualization
-        values: [],
-        
-        // Add a new value to the visualization
-        addValue: function(input, result) {
-            const value = {
-                input: parseFloat(input),
-                result: parseFloat(result),
-                timestamp: Date.now()
-            };
-            
-            this.values.push(value);
-            this.updateVisualization();
-        },
-        
-        // Clear all values
-        clearValues: function() {
-            this.values = [];
-            this.updateVisualization();
-        },
-        
-        // Set active pattern
-        setPattern: function(pattern) {
-            currentPattern = pattern;
-            
-            // Update active button
-            document.querySelectorAll('.canvas-controls button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.getElementById('pattern' + pattern.charAt(0).toUpperCase() + pattern.slice(1)).classList.add('active');
-            
-            this.updateVisualization();
-        },
-        
-        // Update the visualization
-        updateVisualization: function() {
-            // Clear the canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            if (this.values.length === 0) return;
-            
-            // Calculate the pattern based on current mode
-            if (currentPattern === 'circle') {
-                this.drawCirclePattern();
-            } else if (currentPattern === 'spiral') {
-                this.drawSpiralPattern();
-            } else if (currentPattern === 'wave') {
-                this.drawWavePattern();
-            }
-        },
-        
-        // Draw a circle pattern using pi values
-        drawCirclePattern: function() {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const maxRadius = Math.min(canvas.width, canvas.height) * 0.45;
-            
-            // Draw background circle
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius, 0, 2 * Math.PI);
-            ctx.strokeStyle = '#ddd';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            
-            // Draw each point from pi calculations
-            this.values.forEach((value, index) => {
-                const angle = value.result % (2 * Math.PI);
-                const normalizedInput = Math.min(Math.abs(value.input), 100) / 100;
-                const radius = maxRadius * normalizedInput;
-                
-                const x = centerX + radius * Math.cos(angle);
-                const y = centerY + radius * Math.sin(angle);
-                
-                // Change color based on position in sequence
-                const pointHue = (index * 7) % 360;
-                ctx.fillStyle = `hsl(${pointHue}, 70%, 60%)`;
-                
-                // Draw the point
+        // Make filename constant available to Python
+        window.CALCULATOR_FILENAME = 'calculator_instance.html';
+
+        // Visualization variables
+        const canvas = document.getElementById('piCanvas');
+        const ctx = canvas.getContext('2d');
+        let currentPattern = 'circle';
+        let piPoints = [];
+        let animationFrameId = null;
+        let hue = 0;
+
+        // Pi visualization system
+        window.piViz = {
+            // Store calculated values for visualization
+            values: [],
+
+            // Add a new value to the visualization
+            addValue: function (input, result) {
+                const value = {
+                    input: parseFloat(input),
+                    result: parseFloat(result),
+                    timestamp: Date.now()
+                };
+
+                this.values.push(value);
+                this.updateVisualization();
+            },
+
+            // Clear all values
+            clearValues: function () {
+                this.values = [];
+                this.updateVisualization();
+            },
+
+            // Set active pattern
+            setPattern: function (pattern) {
+                currentPattern = pattern;
+
+                // Update active button
+                document.querySelectorAll('.canvas-controls button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.getElementById('pattern' + pattern.charAt(0).toUpperCase() + pattern.slice(1)).classList.add('active');
+
+                this.updateVisualization();
+            },
+
+            // Update the visualization
+            updateVisualization: function () {
+                // Clear the canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (this.values.length === 0) return;
+
+                // Calculate the pattern based on current mode
+                if (currentPattern === 'circle') {
+                    this.drawCirclePattern();
+                } else if (currentPattern === 'spiral') {
+                    this.drawSpiralPattern();
+                } else if (currentPattern === 'wave') {
+                    this.drawWavePattern();
+                }
+            },
+
+            // Draw a circle pattern using pi values
+            drawCirclePattern: function () {
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const maxRadius = Math.min(canvas.width, canvas.height) * 0.45;
+
+                // Draw background circle
                 ctx.beginPath();
-                ctx.arc(x, y, 4, 0, 2 * Math.PI);
-                ctx.fill();
-                
-                // Connect points
-                if (index > 0) {
-                    const prevValue = this.values[index - 1];
-                    const prevAngle = prevValue.result % (2 * Math.PI);
-                    const prevNormalizedInput = Math.min(Math.abs(prevValue.input), 100) / 100;
-                    const prevRadius = maxRadius * prevNormalizedInput;
-                    
-                    const prevX = centerX + prevRadius * Math.cos(prevAngle);
-                    const prevY = centerY + prevRadius * Math.sin(prevAngle);
-                    
+                ctx.arc(centerX, centerY, maxRadius, 0, 2 * Math.PI);
+                ctx.strokeStyle = '#ddd';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Draw each point from pi calculations
+                this.values.forEach((value, index) => {
+                    const angle = value.result % (2 * Math.PI);
+                    const normalizedInput = Math.min(Math.abs(value.input), 100) / 100;
+                    const radius = maxRadius * normalizedInput;
+
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+
+                    // Change color based on position in sequence
+                    const pointHue = (index * 7) % 360;
+                    ctx.fillStyle = `hsl(${pointHue}, 70%, 60%)`;
+
+                    // Draw the point
                     ctx.beginPath();
-                    ctx.moveTo(prevX, prevY);
-                    ctx.lineTo(x, y);
-                    ctx.strokeStyle = `hsla(${pointHue}, 70%, 60%, 0.5)`;
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
-            });
-        },
-        
-        // Draw a spiral pattern using pi values
-        drawSpiralPattern: function() {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const maxRadius = Math.min(canvas.width, canvas.height) * 0.45;
-            
-            // Draw spiral guideline
-            ctx.beginPath();
-            for (let angle = 0; angle < 8 * Math.PI; angle += 0.1) {
-                const radius = maxRadius * angle / (8 * Math.PI);
-                const x = centerX + radius * Math.cos(angle);
-                const y = centerY + radius * Math.sin(angle);
-                
-                if (angle === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            }
-            ctx.strokeStyle = '#eee';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            
-            // Draw each point
-            this.values.forEach((value, index) => {
-                const angle = value.result;
-                const radius = maxRadius * (index / Math.max(20, this.values.length));
-                
-                const x = centerX + radius * Math.cos(angle);
-                const y = centerY + radius * Math.sin(angle);
-                
-                // Change color based on position
-                const pointHue = (value.result * 30) % 360;
-                ctx.fillStyle = `hsl(${pointHue}, 80%, 60%)`;
-                
-                // Draw the point
+                    ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                    ctx.fill();
+
+                    // Connect points
+                    if (index > 0) {
+                        const prevValue = this.values[index - 1];
+                        const prevAngle = prevValue.result % (2 * Math.PI);
+                        const prevNormalizedInput = Math.min(Math.abs(prevValue.input), 100) / 100;
+                        const prevRadius = maxRadius * prevNormalizedInput;
+
+                        const prevX = centerX + prevRadius * Math.cos(prevAngle);
+                        const prevY = centerY + prevRadius * Math.sin(prevAngle);
+
+                        ctx.beginPath();
+                        ctx.moveTo(prevX, prevY);
+                        ctx.lineTo(x, y);
+                        ctx.strokeStyle = `hsla(${pointHue}, 70%, 60%, 0.5)`;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                });
+            },
+
+            // Draw a spiral pattern using pi values
+            drawSpiralPattern: function () {
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const maxRadius = Math.min(canvas.width, canvas.height) * 0.45;
+
+                // Draw spiral guideline
                 ctx.beginPath();
-                ctx.arc(x, y, 4, 0, 2 * Math.PI);
-                ctx.fill();
-                
-                // Connect points
-                if (index > 0) {
-                    const prevValue = this.values[index - 1];
-                    const prevAngle = prevValue.result;
-                    const prevRadius = maxRadius * ((index - 1) / Math.max(20, this.values.length));
-                    
-                    const prevX = centerX + prevRadius * Math.cos(prevAngle);
-                    const prevY = centerY + prevRadius * Math.sin(prevAngle);
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(prevX, prevY);
-                    ctx.lineTo(x, y);
-                    ctx.strokeStyle = `hsla(${pointHue}, 80%, 60%, 0.6)`;
-                    ctx.lineWidth = 1.5;
-                    ctx.stroke();
+                for (let angle = 0; angle < 8 * Math.PI; angle += 0.1) {
+                    const radius = maxRadius * angle / (8 * Math.PI);
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+
+                    if (angle === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
                 }
-            });
-        },
-        
-        // Draw a wave pattern using pi values
-        drawWavePattern: function() {
-            const height = canvas.height;
-            const width = canvas.width;
-            
-            // Draw gridlines
-            ctx.lineWidth = 0.5;
-            ctx.strokeStyle = '#eee';
-            ctx.beginPath();
-            for (let y = 0; y < height; y += 40) {
-                ctx.moveTo(0, y);
-                ctx.lineTo(width, y);
-            }
-            for (let x = 0; x < width; x += 40) {
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, height);
-            }
-            ctx.stroke();
-            
-            // Draw each point
-            this.values.forEach((value, index) => {
-                const x = (index / Math.max(20, this.values.length)) * width;
-                const y = height / 2 + (Math.sin(value.result) * height / 4);
-                
-                // Change color based on position
-                const pointHue = (value.result * 30) % 360;
-                ctx.fillStyle = `hsl(${pointHue}, 80%, 60%)`;
-                
-                // Draw the point
+                ctx.strokeStyle = '#eee';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Draw each point
+                this.values.forEach((value, index) => {
+                    const angle = value.result;
+                    const radius = maxRadius * (index / Math.max(20, this.values.length));
+
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+
+                    // Change color based on position
+                    const pointHue = (value.result * 30) % 360;
+                    ctx.fillStyle = `hsl(${pointHue}, 80%, 60%)`;
+
+                    // Draw the point
+                    ctx.beginPath();
+                    ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                    ctx.fill();
+
+                    // Connect points
+                    if (index > 0) {
+                        const prevValue = this.values[index - 1];
+                        const prevAngle = prevValue.result;
+                        const prevRadius = maxRadius * ((index - 1) / Math.max(20, this.values.length));
+
+                        const prevX = centerX + prevRadius * Math.cos(prevAngle);
+                        const prevY = centerY + prevRadius * Math.sin(prevAngle);
+
+                        ctx.beginPath();
+                        ctx.moveTo(prevX, prevY);
+                        ctx.lineTo(x, y);
+                        ctx.strokeStyle = `hsla(${pointHue}, 80%, 60%, 0.6)`;
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+                    }
+                });
+            },
+
+            // Draw a wave pattern using pi values
+            drawWavePattern: function () {
+                const height = canvas.height;
+                const width = canvas.width;
+
+                // Draw gridlines
+                ctx.lineWidth = 0.5;
+                ctx.strokeStyle = '#eee';
                 ctx.beginPath();
-                ctx.arc(x, y, 4, 0, 2 * Math.PI);
-                ctx.fill();
-                
-                // Connect points
-                if (index > 0) {
-                    const prevValue = this.values[index - 1];
-                    const prevX = ((index - 1) / Math.max(20, this.values.length)) * width;
-                    const prevY = height / 2 + (Math.sin(prevValue.result) * height / 4);
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(prevX, prevY);
-                    ctx.lineTo(x, y);
-                    ctx.strokeStyle = `hsla(${pointHue}, 80%, 60%, 0.6)`;
-                    ctx.lineWidth = 1.5;
-                    ctx.stroke();
+                for (let y = 0; y < height; y += 40) {
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
                 }
-            });
+                for (let x = 0; x < width; x += 40) {
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                }
+                ctx.stroke();
+
+                // Draw each point
+                this.values.forEach((value, index) => {
+                    const x = (index / Math.max(20, this.values.length)) * width;
+                    const y = height / 2 + (Math.sin(value.result) * height / 4);
+
+                    // Change color based on position
+                    const pointHue = (value.result * 30) % 360;
+                    ctx.fillStyle = `hsl(${pointHue}, 80%, 60%)`;
+
+                    // Draw the point
+                    ctx.beginPath();
+                    ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                    ctx.fill();
+
+                    // Connect points
+                    if (index > 0) {
+                        const prevValue = this.values[index - 1];
+                        const prevX = ((index - 1) / Math.max(20, this.values.length)) * width;
+                        const prevY = height / 2 + (Math.sin(prevValue.result) * height / 4);
+
+                        ctx.beginPath();
+                        ctx.moveTo(prevX, prevY);
+                        ctx.lineTo(x, y);
+                        ctx.strokeStyle = `hsla(${pointHue}, 80%, 60%, 0.6)`;
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+                    }
+                });
+            }
+        };
+
+        // Update createDownloadableURL function
+        function createDownloadableURL() {
+            // Create peer ID injection script with escaped end tag
+            const peerIdScript =
+                '<script type="text/javascript">\n' +
+                '    window.originalPeerId = "' + window.peerId + '";\n' +
+                '<\/script>\n';
+
+            // Get current document content
+            let content = document.documentElement.outerHTML;
+
+            // Insert peer ID script before closing head tag
+            content = content.replace('</head>', peerIdScript + '</head>');
+
+            // Create blob with DOCTYPE and modified content
+            const blob = new Blob([
+                '<!DOCTYPE html>\n',
+                content
+            ], { type: 'text/html;charset=utf-8' });
+
+            return URL.createObjectURL(blob);
         }
-    };
 
-    // Update createDownloadableURL function
-    function createDownloadableURL() {
-        // Create peer ID injection script with escaped end tag
-        const peerIdScript =
-            '<script type="text/javascript">\n' +
-            '    window.originalPeerId = "' + window.peerId + '";\n' +
-            '<\/script>\n';
+        // Add UI helper functions
+        window.updateStatus = (text) => {
+            status.textContent = text;
+            console.log('Status:', text);
+        };
 
-        // Get current document content
-        let content = document.documentElement.outerHTML;
+        window.addMessage = (text, type) => {
+            const div = document.createElement("div");
+            div.className = `message ${type}`;
+            div.innerText = text;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            console.log(`Message (${type}):`, text);
 
-        // Insert peer ID script before closing head tag
-        content = content.replace('</head>', peerIdScript + '</head>');
+            // Extract calculation results for visualization
+            if (type === 'received' && text.startsWith('Result:')) {
+                const resultStr = text.replace('Result:', '').trim();
+                // Get the last sent message as input
+                const sentMessages = document.querySelectorAll('.message.sent');
+                if (sentMessages.length > 0) {
+                    const lastSent = sentMessages[sentMessages.length - 1];
+                    const inputStr = lastSent.innerText.replace('Sent:', '').trim();
+                    window.piViz.addValue(inputStr, resultStr);
+                }
+            } else if (type === 'received' && text.startsWith('Calculating:')) {
+                // Extract the input and result from calculation message
+                const match = text.match(/Calculating: π \* ([\d.]+) = ([\d.]+)/);
+                if (match && match[1] && match[2]) {
+                    window.piViz.addValue(match[1], match[2]);
+                }
+            } else if (type === 'sent') {
+                // Also extract the input value from sent messages to prepare for result
+                const inputStr = text.replace('Sent:', '').trim();
+                const input = parseFloat(inputStr);
 
-        // Create blob with DOCTYPE and modified content
-        const blob = new Blob([
-            '<!DOCTYPE html>\n',
-            content
-        ], { type: 'text/html;charset=utf-8' });
-
-        return URL.createObjectURL(blob);
-    }
-
-    // Add UI helper functions
-    window.updateStatus = (text) => {
-        status.textContent = text;
-        console.log('Status:', text);
-    };
-
-    window.addMessage = (text, type) => {
-        const div = document.createElement("div");
-        div.className = `message ${type}`;
-        div.innerText = text;
-        chatContainer.appendChild(div);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-        console.log(`Message (${type}):`, text);
-        
-        // Extract calculation results for visualization
-        if (type === 'received' && text.startsWith('Result:')) {
-            const resultStr = text.replace('Result:', '').trim();
-            // Get the last sent message as input
-            const sentMessages = document.querySelectorAll('.message.sent');
-            if (sentMessages.length > 0) {
-                const lastSent = sentMessages[sentMessages.length - 1];
-                const inputStr = lastSent.innerText.replace('Sent:', '').trim();
-                window.piViz.addValue(inputStr, resultStr);
+                // If this is a local calculation (we're the calculator), add the visualization point immediately
+                if (!window.connection || !window.peerState.isConnected) {
+                    const result = input * Math.PI;
+                    window.piViz.addValue(input, result);
+                }
             }
-        } else if (type === 'received' && text.startsWith('Calculating:')) {
-            // Extract the input and result from calculation message
-            const match = text.match(/Calculating: π \* ([\d.]+) = ([\d.]+)/);
-            if (match && match[1] && match[2]) {
-                window.piViz.addValue(match[1], match[2]);
-            }
-        } else if (type === 'sent') {
-            // Also extract the input value from sent messages to prepare for result
-            const inputStr = text.replace('Sent:', '').trim();
-            const input = parseFloat(inputStr);
-            
-            // If this is a local calculation (we're the calculator), add the visualization point immediately
-            if (!window.connection || !window.peerState.isConnected) {
-                const result = input * Math.PI;
-                window.piViz.addValue(input, result);
-            }
-        }
-    };
+        };
 
-    async function createPeerConnection() {
-        try {
-            peer = new Peer({
-                debug: 2  // Enable detailed logging
-            });
+        async function createPeerConnection() {
+            try {
+                peer = new Peer({
+                    debug: 2  // Enable detailed logging
+                });
 
-            return new Promise((resolve, reject) => {
-                peer.on('open', id => {
-                    console.log('Peer opened with ID:', id);
-                    window.peer = peer;
-                    window.peerId = id;
-                    status.textContent = 'Ready to connect!';
+                return new Promise((resolve, reject) => {
+                    peer.on('open', id => {
+                        console.log('Peer opened with ID:', id);
+                        window.peer = peer;
+                        window.peerId = id;
+                        status.textContent = 'Ready to connect!';
 
-                    peer.on('connection', conn => {
-                        console.log('Incoming connection from:', conn.peer);
-                        connection = conn;
-                        window.connection = conn;
-                        setupConnection(conn);
+                        peer.on('connection', conn => {
+                            console.log('Incoming connection from:', conn.peer);
+                            connection = conn;
+                            window.connection = conn;
+                            setupConnection(conn);
+                        });
+
+                        resolve(peer);
                     });
 
-                    resolve(peer);
+                    peer.on('error', err => {
+                        console.error('Peer error:', err);
+                        reject(err);
+                    });
                 });
-
-                peer.on('error', err => {
-                    console.error('Peer error:', err);
-                    reject(err);
-                });
-            });
-        } catch (err) {
-            console.error('Peer creation error:', err);
-            throw err;
+            } catch (err) {
+                console.error('Peer creation error:', err);
+                throw err;
+            }
         }
-    }
 
-    // Add connection state tracking
-    window.peerState = {
-        isConnected: false,
-        isConnecting: false,
-        peerId: null
-    };
+        // Add connection state tracking
+        window.peerState = {
+            isConnected: false,
+            isConnecting: false,
+            peerId: null
+        };
 
-    // Add connection validation
-    function isValidMessage(data) {
-        return data &&
-               typeof data === 'object' &&
-               data.type !== undefined &&
-               data.content !== undefined &&
-               typeof data.type === 'string' &&
-               typeof data.content === 'string';
-    }
+        // Add connection validation
+        function isValidMessage(data) {
+            return data &&
+                typeof data === 'object' &&
+                data.type !== undefined &&
+                data.content !== undefined &&
+                typeof data.type === 'string' &&
+                typeof data.content === 'string';
+        }
 
-    // Make message types available globally
-    window.MessageTypes = {
-        HANDSHAKE: 'handshake',
-        CALC: 'calc',
-        RESULT: 'result'
-    };
+        // Make message types available globally
+        window.MessageTypes = {
+            HANDSHAKE: 'handshake',
+            CALC: 'calc',
+            RESULT: 'result'
+        };
 
-    function createMessage(type, content) {
-        return JSON.stringify({
-            type: type,
-            content: String(content)
-        });
-    }
+        function createMessage(type, content) {
+            return JSON.stringify({
+                type: type,
+                content: String(content)
+            });
+        }
 
-    // Update connection handling
-    function setupConnection(conn) {
-        if (!conn) return;
+        // Update connection handling
+        function setupConnection(conn) {
+            if (!conn) return;
 
-        window.peerState.isConnecting = true;
-        window.updateStatus("Establishing connection...");
+            window.peerState.isConnecting = true;
+            window.updateStatus("Establishing connection...");
 
-        conn.on('open', () => {
-            console.log('Connection opened with:', conn.peer);
-            window.connection = conn;
-            window.peerState.isConnected = true;
-            window.peerState.isConnecting = false;
-            window.updateStatus('Connected!');
+            conn.on('open', () => {
+                console.log('Connection opened with:', conn.peer);
+                window.connection = conn;
+                window.peerState.isConnected = true;
+                window.peerState.isConnecting = false;
+                window.updateStatus('Connected!');
 
-            // Send handshake message
-            conn.send(createMessage(window.MessageTypes.HANDSHAKE, 'ready'));
+                // Send handshake message
+                conn.send(createMessage(window.MessageTypes.HANDSHAKE, 'ready'));
 
-            // Update UI elements
-            chatContainer.style.display = 'block';
-            document.getElementById("messageForm").style.display = 'flex';
-            document.getElementById("qrSection").style.display = 'none';
-        });
+                // Update UI elements
+                chatContainer.style.display = 'block';
+                document.getElementById("messageForm").style.display = 'flex';
+                document.getElementById("qrSection").style.display = 'none';
+            });
 
-        // Update data handling WITH EXTRA LOGGING
-        conn.on('data', data => {
-            console.log('Raw received data:', data);
-            try {
-                let parsedData = data;
-                if (typeof data === 'string') {
-                    parsedData = JSON.parse(data);
-                }
-                console.log('Parsed data:', parsedData); // ADDED LOGGING
-
-                if (!isValidMessage(parsedData)) {
-                    console.error('Invalid message format:', data);
-                    return;
-                }
-
-                const { type, content } = parsedData;
-
-                if (type === window.MessageTypes.HANDSHAKE) {
-                    console.log('Handshake received');
-                    return; // No action needed, just acknowledge
-                }
-
-                if (type === window.MessageTypes.CALC) {
-                    const number = parseFloat(content);
-                    if (!isNaN(number)) {
-                        const result = number * Math.PI;
-                        conn.send(createMessage(window.MessageTypes.RESULT, result.toFixed(6)));
-                        window.addMessage(`Calculating: π * ${number} = ${result.toFixed(6)}`, 'received');
+            // Update data handling WITH EXTRA LOGGING
+            conn.on('data', data => {
+                console.log('Raw received data:', data);
+                try {
+                    let parsedData = data;
+                    if (typeof data === 'string') {
+                        parsedData = JSON.parse(data);
                     }
-                } else if (type === window.MessageTypes.RESULT) {
-                    window.addMessage(`Result: ${content}`, 'received');
+                    console.log('Parsed data:', parsedData); // ADDED LOGGING
+
+                    if (!isValidMessage(parsedData)) {
+                        console.error('Invalid message format:', data);
+                        return;
+                    }
+
+                    const { type, content } = parsedData;
+
+                    if (type === window.MessageTypes.HANDSHAKE) {
+                        console.log('Handshake received');
+                        return; // No action needed, just acknowledge
+                    }
+
+                    if (type === window.MessageTypes.CALC) {
+                        const number = parseFloat(content);
+                        if (!isNaN(number)) {
+                            const result = number * Math.PI;
+                            conn.send(createMessage(window.MessageTypes.RESULT, result.toFixed(6)));
+                            window.addMessage(`Calculating: π * ${number} = ${result.toFixed(6)}`, 'received');
+                        }
+                    } else if (type === window.MessageTypes.RESULT) {
+                        window.addMessage(`Result: ${content}`, 'received');
+                    }
+                } catch (err) {
+                    console.error('Message handling error:', err);
+                }
+            });
+
+            // Add connection error handler
+            conn.on('error', (err) => {
+                console.error('Connection error:', err);
+                window.peerState.isConnected = false;
+                window.updateStatus('Connection error. Converting to sharing instance.');
+
+                // Convert to sharing instance on error
+                setTimeout(convertToSharingInstance, 1000);
+            });
+
+            conn.on('close', () => {
+                console.log('Connection closed');
+                window.peerState.isConnected = false;
+                window.connection = null;
+
+                // If we have a peerId to try reconnecting
+                if (window.peerState.peerId) {
+                    window.updateStatus('Connection lost. Retrying...');
+                    setTimeout(() => {
+                        try {
+                            const newConn = peer.connect(window.peerState.peerId, {
+                                reliable: true,
+                                serialization: 'json'
+                            });
+                            setupConnection(newConn);
+                        } catch (err) {
+                            console.error('Reconnection failed:', err);
+                            // Convert to sharing after failed retry
+                            convertToSharingInstance();
+                        }
+                    }, 1000);
+                } else {
+                    // If no peer ID, immediately become a sharing instance
+                    convertToSharingInstance();
+                }
+            });
+        }
+
+        // Initialize QR code with proper error handling
+        window.updateQRCode = async (url) => {
+            try {
+                const qrDiv = document.getElementById('qrcode');
+                qrDiv.innerHTML = '';
+
+                await new Promise((resolve, reject) => {
+                    QRCode.toCanvas(url, {
+                        width: 256,
+                        errorCorrectionLevel: 'H'
+                    }, (error, canvas) => {
+                        if (error) reject(error);
+                        else resolve(canvas);
+                    });
+                }).then(canvas => {
+                    qrDiv.appendChild(canvas);
+                    const urlText = document.createElement('p');
+                    urlText.textContent = url;
+                    urlText.style.wordBreak = 'break-all';
+                    qrDiv.appendChild(urlText);
+                });
+            } catch (error) {
+                console.error('QR Code error:', error);
+                status.textContent = 'Failed to generate QR code.';
+            }
+        };
+
+        // Share using Web Share API (for mobile)
+        async function webShare() {
+            try {
+                // Generate file content
+                const fileContent = await generateFileContent();
+
+                // Create file object
+                const file = new File([fileContent], window.CALCULATOR_FILENAME, {
+                    type: 'text/html'
+                });
+
+                const shareData = {
+                    title: 'π Calculator',
+                    text: 'Check out this interactive π calculator!',
+                    files: [file]
+                };
+
+                if (navigator.canShare && navigator.canShare(shareData)) {
+                    await navigator.share(shareData);
+                    window.updateStatus('File shared successfully!');
+                } else {
+                    window.updateStatus('File sharing not supported on this browser.');
+                    // Fall back to download
+                    const downloadLink = document.querySelector('#download-tab .share-btn');
+                    if (downloadLink) downloadLink.click();
                 }
             } catch (err) {
-                console.error('Message handling error:', err);
+                console.error('Error sharing file:', err);
+                window.updateStatus('Error sharing file. Download manually instead.');
             }
-        });
+        }
 
-        // Add connection error handler
-        conn.on('error', (err) => {
-            console.error('Connection error:', err);
-            window.peerState.isConnected = false;
-            window.updateStatus('Connection error. Converting to sharing instance.');
-            
-            // Convert to sharing instance on error
-            setTimeout(convertToSharingInstance, 1000);
-        });
+        // Copy link to clipboard
+        async function copyLink() {
+            try {
+                const url = window.shareUrl || window.location.href;
+                await navigator.clipboard.writeText(url);
 
-        conn.on('close', () => {
-            console.log('Connection closed');
-            window.peerState.isConnected = false;
-            window.connection = null;
-            
-            // If we have a peerId to try reconnecting
-            if (window.peerState.peerId) {
-                window.updateStatus('Connection lost. Retrying...');
+                const alert = document.getElementById('copied-alert');
+                alert.style.display = 'block';
                 setTimeout(() => {
-                    try {
-                        const newConn = peer.connect(window.peerState.peerId, {
-                            reliable: true,
-                            serialization: 'json'
-                        });
-                        setupConnection(newConn);
-                    } catch (err) {
-                        console.error('Reconnection failed:', err);
-                        // Convert to sharing after failed retry
-                        convertToSharingInstance();
-                    }
-                }, 1000);
-            } else {
-                // If no peer ID, immediately become a sharing instance
-                convertToSharingInstance();
+                    alert.style.display = 'none';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                window.updateStatus('Failed to copy link');
             }
-        });
-    }
+        }
 
-    // Initialize QR code with proper error handling
-    window.updateQRCode = async (url) => {
-        try {
-            const qrDiv = document.getElementById('qrcode');
-            qrDiv.innerHTML = '';
+        // Tab functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
 
-            await new Promise((resolve, reject) => {
-                QRCode.toCanvas(url, {
-                    width: 256,
-                    errorCorrectionLevel: 'H'
-                }, (error, canvas) => {
-                    if (error) reject(error);
-                    else resolve(canvas);
+                    // Set active tab
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    // Show active content
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(tabId).classList.add('active');
                 });
-            }).then(canvas => {
-                qrDiv.appendChild(canvas);
-                const urlText = document.createElement('p');
-                urlText.textContent = url;
-                urlText.style.wordBreak = 'break-all';
-                qrDiv.appendChild(urlText);
-            });
-        } catch (error) {
-            console.error('QR Code error:', error);
-            status.textContent = 'Failed to generate QR code.';
-        }
-    };
-
-    // Share using Web Share API (for mobile)
-    async function webShare() {
-        try {
-            // Generate file content
-            const fileContent = await generateFileContent();
-            
-            // Create file object
-            const file = new File([fileContent], window.CALCULATOR_FILENAME, {
-                type: 'text/html'
-            });
-            
-            const shareData = {
-                title: 'π Calculator',
-                text: 'Check out this interactive π calculator!',
-                files: [file]
-            };
-            
-            if (navigator.canShare && navigator.canShare(shareData)) {
-                await navigator.share(shareData);
-                window.updateStatus('File shared successfully!');
-            } else {
-                window.updateStatus('File sharing not supported on this browser.');
-                // Fall back to download
-                const downloadLink = document.querySelector('#download-tab .share-btn');
-                if (downloadLink) downloadLink.click();
-            }
-        } catch (err) {
-            console.error('Error sharing file:', err);
-            window.updateStatus('Error sharing file. Download manually instead.');
-        }
-    }
-
-    // Copy link to clipboard
-    async function copyLink() {
-        try {
-            const url = window.shareUrl || window.location.href;
-            await navigator.clipboard.writeText(url);
-            
-            const alert = document.getElementById('copied-alert');
-            alert.style.display = 'block';
-            setTimeout(() => {
-                alert.style.display = 'none';
-            }, 2000);
-        } catch (err) {
-            console.error('Failed to copy:', err);
-            window.updateStatus('Failed to copy link');
-        }
-    }
-
-    // Tab functionality
-    document.addEventListener('DOMContentLoaded', () => {
-        const tabs = document.querySelectorAll('.tab');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabId = tab.getAttribute('data-tab');
-                
-                // Set active tab
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Show active content
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                document.getElementById(tabId).classList.add('active');
             });
         });
-    });
 
-    // Prepare all sharing options
-    async function prepareSharing() {
-        try {
-            const sharingContainer = document.getElementById('sharingContainer');
-            sharingContainer.style.display = 'block';
-            document.getElementById('shareButton').disabled = true;
-            
-            window.updateStatus("Creating sharing information...");
-            
-            // Set connection ID display
-            document.getElementById('connection-id').textContent = window.peerId;
-            
-            // Set up download URL
-            const downloadUrl = window.createDownloadableURL();
-            const link = document.getElementById('instanceLink');
-            link.href = downloadUrl;
-            link.download = window.CALCULATOR_FILENAME;
-            
-            // Check Web Share API support
-            if (!navigator.share) {
-                document.getElementById('webShareBtn').style.opacity = '0.5';
-                document.getElementById('webShareBtn').title = 'Web Share API not supported in this browser';
+        // Prepare all sharing options
+        async function prepareSharing() {
+            try {
+                const sharingContainer = document.getElementById('sharingContainer');
+                sharingContainer.style.display = 'block';
+                document.getElementById('shareButton').disabled = true;
+
+                window.updateStatus("Creating sharing information...");
+
+                // Set connection ID display
+                document.getElementById('connection-id').textContent = window.peerId;
+
+                // Set up download URL
+                const downloadUrl = window.createDownloadableURL();
+                const link = document.getElementById('instanceLink');
+                link.href = downloadUrl;
+                link.download = window.CALCULATOR_FILENAME;
+
+                // Check Web Share API support
+                if (!navigator.share) {
+                    document.getElementById('webShareBtn').style.opacity = '0.5';
+                    document.getElementById('webShareBtn').title = 'Web Share API not supported in this browser';
+                }
+
+                // Initialize Google API (do this after basic sharing is ready)
+                if (typeof gapi !== 'undefined' && typeof google !== 'undefined') {
+                    initializeGoogleAPI().catch(console.error);
+                } else {
+                    console.log('Google API scripts not loaded');
+                    document.querySelector('.tab[data-tab="drive-tab"]').style.opacity = '0.5';
+                }
+
+                window.updateStatus("Ready to share!");
+            } catch (err) {
+                window.updateStatus(`Share preparation error: ${err.message}`);
+                console.error(err);
             }
-            
-            // Initialize Google API (do this after basic sharing is ready)
-            if (typeof gapi !== 'undefined' && typeof google !== 'undefined') {
-                initializeGoogleAPI().catch(console.error);
-            } else {
-                console.log('Google API scripts not loaded');
-                document.querySelector('.tab[data-tab="drive-tab"]').style.opacity = '0.5';
-            }
-            
-            window.updateStatus("Ready to share!");
-        } catch (err) {
-            window.updateStatus(`Share preparation error: ${err.message}`);
-            console.error(err);
         }
-    }
 
-    // Corrected Python code (fixed syntax error)
-    const pythonCode = `
+        // Corrected Python code (fixed syntax error)
+        const pythonCode = `
     import math
     from pyodide.ffi import to_js
     from js import window, JSON
@@ -1151,735 +1314,736 @@
     manager
     `;
 
-    // Update init function
-    async function init() {
-        try {
-            status.textContent = "Initializing...";
-            await createPeerConnection();
-
-            pyodide = await loadPyodide({
-                indexURL: "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/"
-            });
-
-            manager = await pyodide.runPythonAsync(pythonCode);
-            document.getElementById("messageForm").style.display = 'none';
-
-            // Check if this is a downloaded instance
-            const targetPeerId = window.originalPeerId || window.location.hash.slice(1);
-            if (targetPeerId) {
-                // This is the downloaded instance
-                document.getElementById("shareButton").style.display = 'none';
-                document.getElementById("qrSection").style.display = 'none';
-                window.peerState.peerId = targetPeerId;
-                window.updateStatus("Connecting to original instance...");
-
-                try {
-                    // Create a connection timeout promise
-                    const timeoutPromise = new Promise((_, reject) => {
-                        setTimeout(() => reject(new Error("Connection timeout")), 5000);
-                    });
-                    
-                    // Create connection promise
-                    const connectionPromise = new Promise((resolve, reject) => {
-                        try {
-                            connection = peer.connect(targetPeerId, {
-                                reliable: true,
-                                serialization: 'json'
-                            });
-                            
-                            // Handle connection open event
-                            connection.on('open', () => {
-                                window.peerState.isConnected = true;
-                                resolve(connection);
-                            });
-                            
-                            // Handle connection error
-                            connection.on('error', (err) => {
-                                reject(err);
-                            });
-                            
-                            // Initial setup
-                            setupConnection(connection);
-                        } catch(err) {
-                            reject(err);
-                        }
-                    });
-                    
-                    // Race between connection and timeout
-                    await Promise.race([connectionPromise, timeoutPromise]);
-                    
-                    // If we get here without an exception, connection was successful
-                    console.log("Connection established successfully");
-                    
-                } catch (err) {
-                    console.error("Connection failed:", err);
-                    window.updateStatus("Connection failed. Becoming a sharing instance.");
-                    convertToSharingInstance();
-                }
-            } else {
-                // This is the original instance
-                document.getElementById("shareButton").disabled = false;
-                window.updateStatus("Ready! Share this instance with others.");
-            }
-        } catch (err) {
-            window.updateStatus(`Error: ${err.message}`);
-            console.error(err);
-            
-            // On any error, ensure we can share this instance
-            convertToSharingInstance();
-        }
-    }
-
-    // Message sending handler
-    async function sendMessage(event) {
-        event.preventDefault();
-        const message = document.getElementById("messageInput").value.trim();
-        if (!message) return;
-
-        document.getElementById("messageInput").value = "";
-        
-        // If there's a connection, use manager to send message
-        if (manager && window.peerState.isConnected) {
-            await manager.send_message(message);
-        } else {
-            // If no connection, perform local calculation
+        // Update init function
+        async function init() {
             try {
-                const number = parseFloat(message);
-                if (isNaN(number)) {
-                    window.updateStatus("Please enter a valid number");
-                    return;
-                }
-                
-                window.addMessage(`Sent: ${number.toFixed(6)}`, "sent");
-                const result = number * Math.PI;
-                
-                // Add a small delay to simulate network communication
-                setTimeout(() => {
-                    window.addMessage(`Result: ${result.toFixed(6)}`, "received");
-                }, 300);
-            } catch (err) {
-                window.updateStatus(`Calculation error: ${err.message}`);
-            }
-        }
-    }
+                status.textContent = "Initializing...";
+                await createPeerConnection();
 
-    // Share instance handler
-    async function shareInstance() {
-        try {
-            await manager.share_instance();
-        } catch (err) {
-            status.textContent = `Share error: ${err.message}`;
-        }
-    }
-
-    // Start initialization
-    init().catch(console.error);
-
-    // Copy connection ID to clipboard
-    async function copyConnectionId() {
-        try {
-            await navigator.clipboard.writeText(window.peerId);
-            
-            const alert = document.getElementById('copied-alert');
-            alert.textContent = "Connection ID copied to clipboard!";
-            alert.style.display = 'block';
-            setTimeout(() => {
-                alert.style.display = 'none';
-            }, 2000);
-        } catch (err) {
-            console.error('Failed to copy:', err);
-            window.updateStatus('Failed to copy connection ID');
-        }
-    }
-
-    // Generate HTML file content for sharing
-    async function generateFileContent() {
-        // Create peer ID injection script with escaped end tag
-        const peerIdScript =
-            '<script type="text/javascript">\n' +
-            '    window.originalPeerId = "' + window.peerId + '";\n' +
-            '<\/script>\n';
-
-        // Get current document content
-        let content = document.documentElement.outerHTML;
-
-        // Insert peer ID script before closing head tag
-        content = content.replace('</head>', peerIdScript + '</head>');
-
-        return '<!DOCTYPE html>\n' + content;
-    }
-
-    // Upload to temporary file sharing service
-    async function uploadToService() {
-        window.updateStatus("Preparing file for upload...");
-        
-        try {
-            // Generate file content
-            const fileContent = await generateFileContent();
-            
-            // Create a blob and metadata
-            const blob = new Blob([fileContent], { type: 'text/html' });
-            const metadata = {
-                name: window.CALCULATOR_FILENAME,
-                mimeType: 'text/html',
-            };
-            
-            // Create multipart request
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-            form.append('file', blob);
-            
-            window.updateStatus('Uploading to Google Drive...');
-            
-            // Upload the file
-            const response = await gapi.client.request({
-                path: 'https://www.googleapis.com/upload/drive/v3/files',
-                method: 'POST',
-                params: { uploadType: 'multipart', fields: 'id,webViewLink' },
-                body: form
-            });
-            
-            const result = response.result;
-            
-            // Create sharing link
-            await gapi.client.drive.permissions.create({
-                fileId: result.id,
-                resource: {
-                    role: 'reader',
-                    type: 'anyone'
-                }
-            });
-            
-            // Get shareable link
-            const fileResponse = await gapi.client.drive.files.get({
-                fileId: result.id,
-                fields: 'webViewLink,webContentLink'
-            });
-            
-            const shareLink = fileResponse.result.webContentLink || 
-                             (`https://drive.google.com/file/d/${result.id}/view`);
-            
-            document.getElementById('drive-link').value = shareLink;
-            document.getElementById('drive-share-container').style.display = 'block';
-            
-            window.updateStatus('File uploaded to Google Drive');
-            
-        } catch (err) {
-            console.error('Error uploading to Drive:', err);
-            window.updateStatus('Failed to upload to Google Drive');
-        }
-    }
-
-    // Copy Google Drive link to clipboard
-    async function copyDriveLink() {
-        try {
-            const link = document.getElementById('drive-link').value;
-            await navigator.clipboard.writeText(link);
-            
-            const alert = document.getElementById('copied-alert');
-            alert.textContent = "Drive link copied to clipboard!";
-            alert.style.display = 'block';
-            setTimeout(() => {
-                alert.style.display = 'none';
-            }, 2000);
-            
-        } catch (err) {
-            console.error('Failed to copy Drive link:', err);
-            window.updateStatus('Failed to copy Drive link');
-        }
-    }
-    
-    // Connect to a shared calculator from Drive
-    async function connectToDriveFile() {
-        const fileId = document.getElementById('drive-id-input').value.trim();
-        if (!fileId) {
-            window.updateStatus('Please enter a Google Drive file ID');
-            return;
-        }
-        
-        // Extract file ID if full URL was provided
-        const extractedId = extractDriveFileId(fileId);
-        if (extractedId) {
-            window.updateStatus(`Connecting to file: ${extractedId}`);
-            connectToPeerFromDrive(extractedId);
-        } else {
-            window.updateStatus('Invalid Google Drive file ID');
-        }
-    }
-    
-    // Extract file ID from Google Drive URL
-    function extractDriveFileId(input) {
-        // Handle full URLs
-        const idMatch = input.match(/\/d\/([^\/]+)\/|id=([^&]+)/);
-        if (idMatch) {
-            return idMatch[1] || idMatch[2];
-        }
-        
-        // If input is already just an ID (alphanumeric with dashes)
-        if (/^[a-zA-Z0-9_-]+$/.test(input)) {
-            return input;
-        }
-        
-        return null;
-    }
-    
-    // Check URL for Google Drive file ID and connect if present
-    function checkForDriveFileId() {
-        // Check query parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const driveId = urlParams.get('driveId');
-        
-        if (driveId) {
-            window.updateStatus('Found Drive file ID in URL');
-            document.getElementById('drive-id-input').value = driveId;
-            
-            // Auto-select Drive tab
-            setTimeout(() => {
-                const driveTab = document.querySelector('.tab[data-tab="drive-tab"]');
-                if (driveTab) driveTab.click();
-            }, 500);
-        }
-    }
-    
-    // Connect to peer from Google Drive file
-    async function connectToPeerFromDrive(driveId) {
-        try {
-            // This would require downloading and parsing the file to get the peer ID
-            // For now, we'll simulate this by attempting to download the file metadata
-            
-            window.updateStatus('Attempting to download file metadata...');
-            
-            if (!gapiInited) {
-                window.updateStatus('Google API not initialized. Please sign in first.');
-                return;
-            }
-            
-            // Try to get file metadata
-            const response = await gapi.client.drive.files.get({
-                fileId: driveId,
-                fields: 'name,webContentLink'
-            });
-            
-            window.updateStatus('File found. Please download it and open it locally.');
-            
-            // Provide download link
-            const downloadLink = response.result.webContentLink;
-            if (downloadLink) {
-                window.open(downloadLink, '_blank');
-            }
-            
-        } catch (err) {
-            console.error('Error accessing Drive file:', err);
-            window.updateStatus('Failed to access Google Drive file. Make sure it exists and is shared.');
-        }
-    }
-
-    // Google Drive API configuration
-    const GOOGLE_API_KEY = 'YOUR_API_KEY'; // Replace with your Google API key
-    const GOOGLE_CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your Google Client ID
-    const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-    
-    let tokenClient;
-    let gapiInited = false;
-    let gisInited = false;
-    
-    // Initialize the Google API
-    async function initializeGoogleAPI() {
-        try {
-            await new Promise((resolve, reject) => {
-                gapi.load('client', { callback: resolve, onerror: reject });
-            });
-            
-            await gapi.client.init({
-                apiKey: GOOGLE_API_KEY,
-                discoveryDocs: [DISCOVERY_DOC],
-            });
-            
-            gapiInited = true;
-            window.updateStatus('Google API initialized');
-            
-            // Initialize Google Identity Services
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: GOOGLE_CLIENT_ID,
-                scope: SCOPES,
-                callback: '', // defined later
-            });
-            
-            gisInited = true;
-            
-            // Check URL for Google Drive file ID
-            checkForDriveFileId();
-            
-        } catch (err) {
-            console.error('Error initializing Google API:', err);
-            window.updateStatus('Failed to initialize Google Drive API');
-        }
-    }
-    
-    // Handle Google Drive authentication
-    function handleDriveAuth() {
-        if (!gapiInited || !gisInited) {
-            window.updateStatus('Google API not initialized');
-            return;
-        }
-        
-        // Request an access token
-        tokenClient.callback = async (resp) => {
-            if (resp.error) {
-                window.updateStatus('Authorization error');
-                return;
-            }
-            
-            document.getElementById('drive-auth-container').style.display = 'none';
-            document.getElementById('drive-upload-container').style.display = 'block';
-            window.updateStatus('Authenticated with Google Drive');
-        };
-        
-        if (gapi.client.getToken() === null) {
-            tokenClient.requestAccessToken({ prompt: 'consent' });
-        } else {
-            tokenClient.requestAccessToken({ prompt: '' });
-        }
-    }
-
-    // Show Google Document embed UI
-    async function showGdocEmbed() {
-        try {
-            const gdocContainer = document.getElementById('gdoc-container');
-            gdocContainer.style.display = 'block';
-            
-            // Generate file content
-            const fileContent = await generateFileContent();
-            
-            // Create a simplified version for Google Docs
-            const gdocCode = document.getElementById('gdoc-code');
-            
-            // Create a download link to include in the Google Doc
-            let downloadInstructions = 
-                '<!-- This is a π Calculator HTML file. To use it: \n' +
-                '1. Select all this content (Ctrl+A or Cmd+A)\n' +
-                '2. Copy it (Ctrl+C or Cmd+C)\n' +
-                '3. Create a new text file and save it with .html extension\n' +
-                '4. Paste the content into the file\n' +
-                '5. Open the file in a web browser\n' +
-                '-->\n\n';
-                
-            // Set the textarea content (limited version for Google Docs)
-            gdocCode.value = downloadInstructions + fileContent;
-            
-            window.updateStatus("HTML code ready for Google Document insertion");
-        } catch (err) {
-            console.error('Error preparing Google Doc code:', err);
-            window.updateStatus('Failed to prepare Google Doc embed code');
-        }
-    }
-    
-    // Copy Google Document embed code
-    async function copyGdocCode() {
-        try {
-            const code = document.getElementById('gdoc-code');
-            code.select();
-            document.execCommand('copy');
-            
-            const alert = document.getElementById('copied-alert');
-            alert.textContent = "HTML code copied to clipboard!";
-            alert.style.display = 'block';
-            setTimeout(() => {
-                alert.style.display = 'none';
-            }, 2000);
-        } catch (err) {
-            console.error('Failed to copy code:', err);
-            window.updateStatus('Failed to copy HTML code');
-        }
-    }
-    
-    // Download the HTML file directly 
-    function downloadAsHTML() {
-        try {
-            // Trigger click on the download link in the download tab
-            const downloadLink = document.querySelector('#download-tab .share-btn');
-            if (downloadLink) downloadLink.click();
-        } catch (err) {
-            console.error('Download error:', err);
-            window.updateStatus('Failed to download HTML file');
-        }
-    }
-
-    // Update the generateFileContent function to make it more Google Docs friendly
-    async function generateFileContent() {
-        // Create peer ID injection script with escaped end tag
-        const peerIdScript =
-            '<script type="text/javascript">\n' +
-            '    window.originalPeerId = "' + window.peerId + '";\n' +
-            '<\/script>\n';
-
-        // Get current document content
-        let content = document.documentElement.outerHTML;
-
-        // Insert peer ID script before closing head tag
-        content = content.replace('</head>', peerIdScript + '</head>');
-
-        return '<!DOCTYPE html>\n' + content;
-    }
-
-    // Upload to temporary file sharing service (keep this for compatibility)
-    async function uploadToService() {
-        window.updateStatus("Redirecting to Google Document method...");
-        showGdocEmbed();
-    }
-
-    // Local network server functions
-    let serverSharing = {
-        active: false,
-        url: null,
-        port: 8000, // Default port number
-        networkAddresses: []
-    };
-    
-    // Detect the local network IPs
-    async function detectLocalIPs() {
-        try {
-            // This uses WebRTC to detect local IPs
-            const addresses = [];
-            
-            // Display the current URL
-            const currentURL = window.location.href;
-            document.getElementById('current-url').textContent = currentURL;
-            
-            // Check if we're already on a server
-            if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-                const hostname = window.location.hostname;
-                if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-                    addresses.push(window.location.origin);
-                }
-            }
-            
-            // Try to get IPs using RTCPeerConnection (WebRTC)
-            // This is a hack that may not work in all browsers
-            try {
-                const pc = new RTCPeerConnection({
-                    iceServers: []
+                pyodide = await loadPyodide({
+                    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/"
                 });
-                
-                pc.createDataChannel('');
-                
-                pc.onicecandidate = (event) => {
-                    if (!event.candidate) return;
-                    
-                    const candidateStr = event.candidate.candidate;
-                    if (candidateStr) {
-                        const match = /([0-9]{1,3}(\.[0-9]{1,3}){3})/.exec(candidateStr);
-                        if (match && match[1] && !addresses.includes(match[1]) && match[1] !== '127.0.0.1') {
-                            addresses.push(match[1]);
-                        }
+
+                manager = await pyodide.runPythonAsync(pythonCode);
+                document.getElementById("messageForm").style.display = 'none';
+
+                // Check if this is a downloaded instance
+                const targetPeerId = window.originalPeerId || window.location.hash.slice(1);
+                if (targetPeerId) {
+                    // This is the downloaded instance
+                    document.getElementById("shareButton").style.display = 'none';
+                    document.getElementById("qrSection").style.display = 'none';
+                    window.peerState.peerId = targetPeerId;
+                    window.updateStatus("Connecting to original instance...");
+
+                    try {
+                        // Create a connection timeout promise
+                        const timeoutPromise = new Promise((_, reject) => {
+                            setTimeout(() => reject(new Error("Connection timeout")), 5000);
+                        });
+
+                        // Create connection promise
+                        const connectionPromise = new Promise((resolve, reject) => {
+                            try {
+                                connection = peer.connect(targetPeerId, {
+                                    reliable: true,
+                                    serialization: 'json'
+                                });
+
+                                // Handle connection open event
+                                connection.on('open', () => {
+                                    window.peerState.isConnected = true;
+                                    resolve(connection);
+                                });
+
+                                // Handle connection error
+                                connection.on('error', (err) => {
+                                    reject(err);
+                                });
+
+                                // Initial setup
+                                setupConnection(connection);
+                            } catch (err) {
+                                reject(err);
+                            }
+                        });
+
+                        // Race between connection and timeout
+                        await Promise.race([connectionPromise, timeoutPromise]);
+
+                        // If we get here without an exception, connection was successful
+                        console.log("Connection established successfully");
+
+                    } catch (err) {
+                        console.error("Connection failed:", err);
+                        window.updateStatus("Connection failed. Becoming a sharing instance.");
+                        convertToSharingInstance();
                     }
-                };
-                
-                await pc.createOffer().then(offer => pc.setLocalDescription(offer));
-                
-                // Give some time for candidates to be gathered
-                await new Promise(r => setTimeout(r, 1000));
-                
-                pc.close();
-            } catch (e) {
-                console.log('WebRTC IP detection failed:', e);
-            }
-            
-            // Always add localhost
-            if (!addresses.includes('localhost')) {
-                addresses.push('localhost');
-            }
-            
-            serverSharing.networkAddresses = addresses;
-            
-            // Update UI
-            const ipAddressesElement = document.getElementById('ipAddresses');
-            if (addresses.length > 0) {
-                ipAddressesElement.innerHTML = addresses.map(ip => {
-                    // Format as URLs with port if not a full URL
-                    if (ip.startsWith('http')) {
-                        return `<div>${ip}</div>`;
-                    } else {
-                        return `<div>http://${ip}:${serverSharing.port}</div>`;
-                    }
-                }).join('');
-            } else {
-                ipAddressesElement.textContent = 'Could not detect network addresses';
-            }
-            
-            return addresses;
-        } catch (err) {
-            console.error('Error detecting IPs:', err);
-            document.getElementById('ipAddresses').textContent = 'Failed to detect network addresses';
-            return [];
-        }
-    }
-    
-    // Start local server simulation
-    function startLocalServer() {
-        // Show the IP information
-        document.getElementById('ipInfo').style.display = 'block';
-        detectLocalIPs().then(addresses => {
-            if (addresses.length > 0) {
-                // If we have an actual server or network address, show sharing info
-                serverSharing.active = true;
-                
-                // Get the first non-localhost address or use localhost if none available
-                const shareableAddress = addresses.find(addr => addr !== 'localhost') || 'localhost';
-                
-                // Create the sharing URL
-                let shareURL;
-                if (shareableAddress.startsWith('http')) {
-                    shareURL = shareableAddress;
                 } else {
-                    shareURL = `http://${shareableAddress}:${serverSharing.port}${window.location.pathname}#${window.peerId}`;
+                    // This is the original instance
+                    document.getElementById("shareButton").disabled = false;
+                    window.updateStatus("Ready! Share this instance with others.");
                 }
-                
-                serverSharing.url = shareURL;
-                
-                // Update UI
-                document.getElementById('server-url').textContent = shareURL;
-                document.getElementById('network-status').style.display = 'block';
-                
-                // Generate QR code for the URL
-                generateNetworkQR(shareURL);
-                
-                window.updateStatus("Local sharing enabled. Devices on your network can connect using the provided URL.");
-            } else {
-                window.updateStatus("Couldn't find network addresses. Try using your device's IP address.");
+            } catch (err) {
+                window.updateStatus(`Error: ${err.message}`);
+                console.error(err);
+
+                // On any error, ensure we can share this instance
+                convertToSharingInstance();
             }
-        });
-    }
-    
-    // Generate QR code for network sharing
-    async function generateNetworkQR(url) {
-        try {
-            const qrDiv = document.getElementById('network-qrcode');
-            qrDiv.innerHTML = '';
-            
-            await QRCode.toCanvas(url, {
-                width: 200,
-                errorCorrectionLevel: 'H'
-            }, (error, canvas) => {
-                if (error) throw error;
-                qrDiv.appendChild(canvas);
-            });
-        } catch (error) {
-            console.error('Network QR Code error:', error);
         }
-    }
-    
-    // Copy network link to clipboard
-    async function copyNetworkLink() {
-        try {
-            if (serverSharing.url) {
-                await navigator.clipboard.writeText(serverSharing.url);
-                
+
+        // Message sending handler
+        async function sendMessage(event) {
+            event.preventDefault();
+            const message = document.getElementById("messageInput").value.trim();
+            if (!message) return;
+
+            document.getElementById("messageInput").value = "";
+
+            // If there's a connection, use manager to send message
+            if (manager && window.peerState.isConnected) {
+                await manager.send_message(message);
+            } else {
+                // If no connection, perform local calculation
+                try {
+                    const number = parseFloat(message);
+                    if (isNaN(number)) {
+                        window.updateStatus("Please enter a valid number");
+                        return;
+                    }
+
+                    window.addMessage(`Sent: ${number.toFixed(6)}`, "sent");
+                    const result = number * Math.PI;
+
+                    // Add a small delay to simulate network communication
+                    setTimeout(() => {
+                        window.addMessage(`Result: ${result.toFixed(6)}`, "received");
+                    }, 300);
+                } catch (err) {
+                    window.updateStatus(`Calculation error: ${err.message}`);
+                }
+            }
+        }
+
+        // Share instance handler
+        async function shareInstance() {
+            try {
+                await manager.share_instance();
+            } catch (err) {
+                status.textContent = `Share error: ${err.message}`;
+            }
+        }
+
+        // Start initialization
+        init().catch(console.error);
+
+        // Copy connection ID to clipboard
+        async function copyConnectionId() {
+            try {
+                await navigator.clipboard.writeText(window.peerId);
+
                 const alert = document.getElementById('copied-alert');
-                alert.textContent = "Network link copied to clipboard!";
+                alert.textContent = "Connection ID copied to clipboard!";
                 alert.style.display = 'block';
                 setTimeout(() => {
                     alert.style.display = 'none';
                 }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                window.updateStatus('Failed to copy connection ID');
             }
-        } catch (err) {
-            console.error('Failed to copy network link:', err);
-            window.updateStatus('Failed to copy network link');
         }
-    }
-    
-    // Stop local server
-    function stopLocalServer() {
-        serverSharing.active = false;
-        document.getElementById('network-status').style.display = 'none';
-        document.getElementById('ipInfo').style.display = 'none';
-        window.updateStatus("Local sharing stopped.");
-    }
-    
-    // Update the tab initialization to detect addresses when network tab is opened
-    document.addEventListener('DOMContentLoaded', () => {
-        const tabs = document.querySelectorAll('.tab');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabId = tab.getAttribute('data-tab');
-                
-                // Set active tab
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Show active content
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                document.getElementById(tabId).classList.add('active');
-                
-                // If network tab is selected, show current URL
-                if (tabId === 'network-tab') {
-                    document.getElementById('current-url').textContent = window.location.href;
+
+        // Generate HTML file content for sharing
+        async function generateFileContent() {
+            // Create peer ID injection script with escaped end tag
+            const peerIdScript =
+                '<script type="text/javascript">\n' +
+                '    window.originalPeerId = "' + window.peerId + '";\n' +
+                '<\/script>\n';
+
+            // Get current document content
+            let content = document.documentElement.outerHTML;
+
+            // Insert peer ID script before closing head tag
+            content = content.replace('</head>', peerIdScript + '</head>');
+
+            return '<!DOCTYPE html>\n' + content;
+        }
+
+        // Upload to temporary file sharing service
+        async function uploadToService() {
+            window.updateStatus("Preparing file for upload...");
+
+            try {
+                // Generate file content
+                const fileContent = await generateFileContent();
+
+                // Create a blob and metadata
+                const blob = new Blob([fileContent], { type: 'text/html' });
+                const metadata = {
+                    name: window.CALCULATOR_FILENAME,
+                    mimeType: 'text/html',
+                };
+
+                // Create multipart request
+                const form = new FormData();
+                form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+                form.append('file', blob);
+
+                window.updateStatus('Uploading to Google Drive...');
+
+                // Upload the file
+                const response = await gapi.client.request({
+                    path: 'https://www.googleapis.com/upload/drive/v3/files',
+                    method: 'POST',
+                    params: { uploadType: 'multipart', fields: 'id,webViewLink' },
+                    body: form
+                });
+
+                const result = response.result;
+
+                // Create sharing link
+                await gapi.client.drive.permissions.create({
+                    fileId: result.id,
+                    resource: {
+                        role: 'reader',
+                        type: 'anyone'
+                    }
+                });
+
+                // Get shareable link
+                const fileResponse = await gapi.client.drive.files.get({
+                    fileId: result.id,
+                    fields: 'webViewLink,webContentLink'
+                });
+
+                const shareLink = fileResponse.result.webContentLink ||
+                    (`https://drive.google.com/file/d/${result.id}/view`);
+
+                document.getElementById('drive-link').value = shareLink;
+                document.getElementById('drive-share-container').style.display = 'block';
+
+                window.updateStatus('File uploaded to Google Drive');
+
+            } catch (err) {
+                console.error('Error uploading to Drive:', err);
+                window.updateStatus('Failed to upload to Google Drive');
+            }
+        }
+
+        // Copy Google Drive link to clipboard
+        async function copyDriveLink() {
+            try {
+                const link = document.getElementById('drive-link').value;
+                await navigator.clipboard.writeText(link);
+
+                const alert = document.getElementById('copied-alert');
+                alert.textContent = "Drive link copied to clipboard!";
+                alert.style.display = 'block';
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 2000);
+
+            } catch (err) {
+                console.error('Failed to copy Drive link:', err);
+                window.updateStatus('Failed to copy Drive link');
+            }
+        }
+
+        // Connect to a shared calculator from Drive
+        async function connectToDriveFile() {
+            const fileId = document.getElementById('drive-id-input').value.trim();
+            if (!fileId) {
+                window.updateStatus('Please enter a Google Drive file ID');
+                return;
+            }
+
+            // Extract file ID if full URL was provided
+            const extractedId = extractDriveFileId(fileId);
+            if (extractedId) {
+                window.updateStatus(`Connecting to file: ${extractedId}`);
+                connectToPeerFromDrive(extractedId);
+            } else {
+                window.updateStatus('Invalid Google Drive file ID');
+            }
+        }
+
+        // Extract file ID from Google Drive URL
+        function extractDriveFileId(input) {
+            // Handle full URLs
+            const idMatch = input.match(/\/d\/([^\/]+)\/|id=([^&]+)/);
+            if (idMatch) {
+                return idMatch[1] || idMatch[2];
+            }
+
+            // If input is already just an ID (alphanumeric with dashes)
+            if (/^[a-zA-Z0-9_-]+$/.test(input)) {
+                return input;
+            }
+
+            return null;
+        }
+
+        // Check URL for Google Drive file ID and connect if present
+        function checkForDriveFileId() {
+            // Check query parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const driveId = urlParams.get('driveId');
+
+            if (driveId) {
+                window.updateStatus('Found Drive file ID in URL');
+                document.getElementById('drive-id-input').value = driveId;
+
+                // Auto-select Drive tab
+                setTimeout(() => {
+                    const driveTab = document.querySelector('.tab[data-tab="drive-tab"]');
+                    if (driveTab) driveTab.click();
+                }, 500);
+            }
+        }
+
+        // Connect to peer from Google Drive file
+        async function connectToPeerFromDrive(driveId) {
+            try {
+                // This would require downloading and parsing the file to get the peer ID
+                // For now, we'll simulate this by attempting to download the file metadata
+
+                window.updateStatus('Attempting to download file metadata...');
+
+                if (!gapiInited) {
+                    window.updateStatus('Google API not initialized. Please sign in first.');
+                    return;
+                }
+
+                // Try to get file metadata
+                const response = await gapi.client.drive.files.get({
+                    fileId: driveId,
+                    fields: 'name,webContentLink'
+                });
+
+                window.updateStatus('File found. Please download it and open it locally.');
+
+                // Provide download link
+                const downloadLink = response.result.webContentLink;
+                if (downloadLink) {
+                    window.open(downloadLink, '_blank');
+                }
+
+            } catch (err) {
+                console.error('Error accessing Drive file:', err);
+                window.updateStatus('Failed to access Google Drive file. Make sure it exists and is shared.');
+            }
+        }
+
+        // Google Drive API configuration
+        const GOOGLE_API_KEY = 'YOUR_API_KEY'; // Replace with your Google API key
+        const GOOGLE_CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your Google Client ID
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+
+        let tokenClient;
+        let gapiInited = false;
+        let gisInited = false;
+
+        // Initialize the Google API
+        async function initializeGoogleAPI() {
+            try {
+                await new Promise((resolve, reject) => {
+                    gapi.load('client', { callback: resolve, onerror: reject });
+                });
+
+                await gapi.client.init({
+                    apiKey: GOOGLE_API_KEY,
+                    discoveryDocs: [DISCOVERY_DOC],
+                });
+
+                gapiInited = true;
+                window.updateStatus('Google API initialized');
+
+                // Initialize Google Identity Services
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: SCOPES,
+                    callback: '', // defined later
+                });
+
+                gisInited = true;
+
+                // Check URL for Google Drive file ID
+                checkForDriveFileId();
+
+            } catch (err) {
+                console.error('Error initializing Google API:', err);
+                window.updateStatus('Failed to initialize Google Drive API');
+            }
+        }
+
+        // Handle Google Drive authentication
+        function handleDriveAuth() {
+            if (!gapiInited || !gisInited) {
+                window.updateStatus('Google API not initialized');
+                return;
+            }
+
+            // Request an access token
+            tokenClient.callback = async (resp) => {
+                if (resp.error) {
+                    window.updateStatus('Authorization error');
+                    return;
+                }
+
+                document.getElementById('drive-auth-container').style.display = 'none';
+                document.getElementById('drive-upload-container').style.display = 'block';
+                window.updateStatus('Authenticated with Google Drive');
+            };
+
+            if (gapi.client.getToken() === null) {
+                tokenClient.requestAccessToken({ prompt: 'consent' });
+            } else {
+                tokenClient.requestAccessToken({ prompt: '' });
+            }
+        }
+
+        // Show Google Document embed UI
+        async function showGdocEmbed() {
+            try {
+                const gdocContainer = document.getElementById('gdoc-container');
+                gdocContainer.style.display = 'block';
+
+                // Generate file content
+                const fileContent = await generateFileContent();
+
+                // Create a simplified version for Google Docs
+                const gdocCode = document.getElementById('gdoc-code');
+
+                // Create a download link to include in the Google Doc
+                let downloadInstructions =
+                    '<!-- This is a π Calculator HTML file. To use it: \n' +
+                    '1. Select all this content (Ctrl+A or Cmd+A)\n' +
+                    '2. Copy it (Ctrl+C or Cmd+C)\n' +
+                    '3. Create a new text file and save it with .html extension\n' +
+                    '4. Paste the content into the file\n' +
+                    '5. Open the file in a web browser\n' +
+                    '-->\n\n';
+
+                // Set the textarea content (limited version for Google Docs)
+                gdocCode.value = downloadInstructions + fileContent;
+
+                window.updateStatus("HTML code ready for Google Document insertion");
+            } catch (err) {
+                console.error('Error preparing Google Doc code:', err);
+                window.updateStatus('Failed to prepare Google Doc embed code');
+            }
+        }
+
+        // Copy Google Document embed code
+        async function copyGdocCode() {
+            try {
+                const code = document.getElementById('gdoc-code');
+                code.select();
+                document.execCommand('copy');
+
+                const alert = document.getElementById('copied-alert');
+                alert.textContent = "HTML code copied to clipboard!";
+                alert.style.display = 'block';
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy code:', err);
+                window.updateStatus('Failed to copy HTML code');
+            }
+        }
+
+        // Download the HTML file directly 
+        function downloadAsHTML() {
+            try {
+                // Trigger click on the download link in the download tab
+                const downloadLink = document.querySelector('#download-tab .share-btn');
+                if (downloadLink) downloadLink.click();
+            } catch (err) {
+                console.error('Download error:', err);
+                window.updateStatus('Failed to download HTML file');
+            }
+        }
+
+        // Update the generateFileContent function to make it more Google Docs friendly
+        async function generateFileContent() {
+            // Create peer ID injection script with escaped end tag
+            const peerIdScript =
+                '<script type="text/javascript">\n' +
+                '    window.originalPeerId = "' + window.peerId + '";\n' +
+                '<\/script>\n';
+
+            // Get current document content
+            let content = document.documentElement.outerHTML;
+
+            // Insert peer ID script before closing head tag
+            content = content.replace('</head>', peerIdScript + '</head>');
+
+            return '<!DOCTYPE html>\n' + content;
+        }
+
+        // Upload to temporary file sharing service (keep this for compatibility)
+        async function uploadToService() {
+            window.updateStatus("Redirecting to Google Document method...");
+            showGdocEmbed();
+        }
+
+        // Local network server functions
+        let serverSharing = {
+            active: false,
+            url: null,
+            port: 8000, // Default port number
+            networkAddresses: []
+        };
+
+        // Detect the local network IPs
+        async function detectLocalIPs() {
+            try {
+                // This uses WebRTC to detect local IPs
+                const addresses = [];
+
+                // Display the current URL
+                const currentURL = window.location.href;
+                document.getElementById('current-url').textContent = currentURL;
+
+                // Check if we're already on a server
+                if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+                    const hostname = window.location.hostname;
+                    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+                        addresses.push(window.location.origin);
+                    }
+                }
+
+                // Try to get IPs using RTCPeerConnection (WebRTC)
+                // This is a hack that may not work in all browsers
+                try {
+                    const pc = new RTCPeerConnection({
+                        iceServers: []
+                    });
+
+                    pc.createDataChannel('');
+
+                    pc.onicecandidate = (event) => {
+                        if (!event.candidate) return;
+
+                        const candidateStr = event.candidate.candidate;
+                        if (candidateStr) {
+                            const match = /([0-9]{1,3}(\.[0-9]{1,3}){3})/.exec(candidateStr);
+                            if (match && match[1] && !addresses.includes(match[1]) && match[1] !== '127.0.0.1') {
+                                addresses.push(match[1]);
+                            }
+                        }
+                    };
+
+                    await pc.createOffer().then(offer => pc.setLocalDescription(offer));
+
+                    // Give some time for candidates to be gathered
+                    await new Promise(r => setTimeout(r, 1000));
+
+                    pc.close();
+                } catch (e) {
+                    console.log('WebRTC IP detection failed:', e);
+                }
+
+                // Always add localhost
+                if (!addresses.includes('localhost')) {
+                    addresses.push('localhost');
+                }
+
+                serverSharing.networkAddresses = addresses;
+
+                // Update UI
+                const ipAddressesElement = document.getElementById('ipAddresses');
+                if (addresses.length > 0) {
+                    ipAddressesElement.innerHTML = addresses.map(ip => {
+                        // Format as URLs with port if not a full URL
+                        if (ip.startsWith('http')) {
+                            return `<div>${ip}</div>`;
+                        } else {
+                            return `<div>http://${ip}:${serverSharing.port}</div>`;
+                        }
+                    }).join('');
+                } else {
+                    ipAddressesElement.textContent = 'Could not detect network addresses';
+                }
+
+                return addresses;
+            } catch (err) {
+                console.error('Error detecting IPs:', err);
+                document.getElementById('ipAddresses').textContent = 'Failed to detect network addresses';
+                return [];
+            }
+        }
+
+        // Start local server simulation
+        function startLocalServer() {
+            // Show the IP information
+            document.getElementById('ipInfo').style.display = 'block';
+            detectLocalIPs().then(addresses => {
+                if (addresses.length > 0) {
+                    // If we have an actual server or network address, show sharing info
+                    serverSharing.active = true;
+
+                    // Get the first non-localhost address or use localhost if none available
+                    const shareableAddress = addresses.find(addr => addr !== 'localhost') || 'localhost';
+
+                    // Create the sharing URL
+                    let shareURL;
+                    if (shareableAddress.startsWith('http')) {
+                        shareURL = shareableAddress;
+                    } else {
+                        shareURL = `http://${shareableAddress}:${serverSharing.port}${window.location.pathname}#${window.peerId}`;
+                    }
+
+                    serverSharing.url = shareURL;
+
+                    // Update UI
+                    document.getElementById('server-url').textContent = shareURL;
+                    document.getElementById('network-status').style.display = 'block';
+
+                    // Generate QR code for the URL
+                    generateNetworkQR(shareURL);
+
+                    window.updateStatus("Local sharing enabled. Devices on your network can connect using the provided URL.");
+                } else {
+                    window.updateStatus("Couldn't find network addresses. Try using your device's IP address.");
                 }
             });
-        });
-    });
-
-    // Add these event listeners right after the piViz definition
-    document.addEventListener('DOMContentLoaded', function() {
-        // Pattern button event listeners
-        document.getElementById('patternCircle').addEventListener('click', function() {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-            window.piViz.setPattern('circle');
-        });
-        
-        document.getElementById('patternSpiral').addEventListener('click', function() {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-            window.piViz.setPattern('spiral');
-        });
-        
-        document.getElementById('patternWave').addEventListener('click', function() {
-            window.piViz.setPattern('wave');
-        });
-        
-        document.getElementById('clearCanvas').addEventListener('click', function() {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-            window.piViz.clearValues();
-        });
-    });
-
-    // Add a function to convert to sharing mode
-    function convertToSharingInstance() {
-        // Clear any existing connection attempts
-        if (connection) {
-            try {
-                connection.close();
-            } catch (e) {
-                console.log("Error closing connection:", e);
-            }
-            connection = null;
         }
-        
-        // Clear any stored peer ID from the failed connection
-        window.peerState.peerId = null;
-        window.peerState.isConnected = false;
-        window.peerState.isConnecting = false;
-        
-        // Show sharing UI
-        document.getElementById("shareButton").disabled = false;
-        document.getElementById("shareButton").style.display = 'block';
-        document.getElementById("qrSection").style.display = 'block';
-        
-        // Enable chat form for local calculation mode
-        document.getElementById("messageForm").style.display = 'flex';
-        document.getElementById("chatContainer").style.display = 'block';
-        
-        window.updateStatus("Ready! Share this instance with others or calculate locally.");
-    }
-</script>
+
+        // Generate QR code for network sharing
+        async function generateNetworkQR(url) {
+            try {
+                const qrDiv = document.getElementById('network-qrcode');
+                qrDiv.innerHTML = '';
+
+                await QRCode.toCanvas(url, {
+                    width: 200,
+                    errorCorrectionLevel: 'H'
+                }, (error, canvas) => {
+                    if (error) throw error;
+                    qrDiv.appendChild(canvas);
+                });
+            } catch (error) {
+                console.error('Network QR Code error:', error);
+            }
+        }
+
+        // Copy network link to clipboard
+        async function copyNetworkLink() {
+            try {
+                if (serverSharing.url) {
+                    await navigator.clipboard.writeText(serverSharing.url);
+
+                    const alert = document.getElementById('copied-alert');
+                    alert.textContent = "Network link copied to clipboard!";
+                    alert.style.display = 'block';
+                    setTimeout(() => {
+                        alert.style.display = 'none';
+                    }, 2000);
+                }
+            } catch (err) {
+                console.error('Failed to copy network link:', err);
+                window.updateStatus('Failed to copy network link');
+            }
+        }
+
+        // Stop local server
+        function stopLocalServer() {
+            serverSharing.active = false;
+            document.getElementById('network-status').style.display = 'none';
+            document.getElementById('ipInfo').style.display = 'none';
+            window.updateStatus("Local sharing stopped.");
+        }
+
+        // Update the tab initialization to detect addresses when network tab is opened
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+
+                    // Set active tab
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    // Show active content
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(tabId).classList.add('active');
+
+                    // If network tab is selected, show current URL
+                    if (tabId === 'network-tab') {
+                        document.getElementById('current-url').textContent = window.location.href;
+                    }
+                });
+            });
+        });
+
+        // Add these event listeners right after the piViz definition
+        document.addEventListener('DOMContentLoaded', function () {
+            // Pattern button event listeners
+            document.getElementById('patternCircle').addEventListener('click', function () {
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                window.piViz.setPattern('circle');
+            });
+
+            document.getElementById('patternSpiral').addEventListener('click', function () {
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                window.piViz.setPattern('spiral');
+            });
+
+            document.getElementById('patternWave').addEventListener('click', function () {
+                window.piViz.setPattern('wave');
+            });
+
+            document.getElementById('clearCanvas').addEventListener('click', function () {
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                window.piViz.clearValues();
+            });
+        });
+
+        // Add a function to convert to sharing mode
+        function convertToSharingInstance() {
+            // Clear any existing connection attempts
+            if (connection) {
+                try {
+                    connection.close();
+                } catch (e) {
+                    console.log("Error closing connection:", e);
+                }
+                connection = null;
+            }
+
+            // Clear any stored peer ID from the failed connection
+            window.peerState.peerId = null;
+            window.peerState.isConnected = false;
+            window.peerState.isConnecting = false;
+
+            // Show sharing UI
+            document.getElementById("shareButton").disabled = false;
+            document.getElementById("shareButton").style.display = 'block';
+            document.getElementById("qrSection").style.display = 'block';
+
+            // Enable chat form for local calculation mode
+            document.getElementById("messageForm").style.display = 'flex';
+            document.getElementById("chatContainer").style.display = 'block';
+
+            window.updateStatus("Ready! Share this instance with others or calculate locally.");
+        }
+    </script>
 </body>
+
 </html>
