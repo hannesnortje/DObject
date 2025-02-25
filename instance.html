@@ -251,6 +251,56 @@
             color: #4caf50;
             font-weight: bold;
         }
+
+        /* New visualization styles */
+        #visualizationContainer {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        #piCanvas {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            max-width: 100%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .canvas-container {
+            position: relative;
+            margin: 0 auto;
+            max-width: 600px;
+        }
+        
+        .canvas-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .canvas-controls button {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .canvas-controls button.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        .pattern-info {
+            margin: 10px auto;
+            max-width: 600px;
+            padding: 10px;
+            background: #f0f8ff;
+            border-radius: 5px;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
@@ -261,6 +311,23 @@
 </head>
 <body>
     <h1>π Calculator Instance</h1>
+    
+    <!-- Add visualization section -->
+    <div id="visualizationContainer">
+        <div class="canvas-container">
+            <canvas id="piCanvas" width="600" height="400"></canvas>
+        </div>
+        <div class="canvas-controls">
+            <button id="patternCircle" class="active">Circle Pattern</button>
+            <button id="patternSpiral">Spiral Pattern</button>
+            <button id="patternWave">Wave Pattern</button>
+            <button id="clearCanvas">Clear</button>
+        </div>
+        <div class="pattern-info">
+            This visualization uses π to create mathematical patterns. Each calculation adds points to the pattern. Try sending different numbers to see how the pattern evolves!
+        </div>
+    </div>
+    
     <div id="qrSection">
         <button id="shareButton" onclick="prepareSharing()" disabled>Share Instance</button>
         
@@ -438,6 +505,227 @@
 
     // Make filename constant available to Python
     window.CALCULATOR_FILENAME = 'calculator_instance.html';
+    
+    // Visualization variables
+    const canvas = document.getElementById('piCanvas');
+    const ctx = canvas.getContext('2d');
+    let currentPattern = 'circle';
+    let piPoints = [];
+    let animationFrameId = null;
+    let hue = 0;
+    
+    // Pi visualization system
+    window.piViz = {
+        // Store calculated values for visualization
+        values: [],
+        
+        // Add a new value to the visualization
+        addValue: function(input, result) {
+            const value = {
+                input: parseFloat(input),
+                result: parseFloat(result),
+                timestamp: Date.now()
+            };
+            
+            this.values.push(value);
+            this.updateVisualization();
+        },
+        
+        // Clear all values
+        clearValues: function() {
+            this.values = [];
+            this.updateVisualization();
+        },
+        
+        // Set active pattern
+        setPattern: function(pattern) {
+            currentPattern = pattern;
+            
+            // Update active button
+            document.querySelectorAll('.canvas-controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById('pattern' + pattern.charAt(0).toUpperCase() + pattern.slice(1)).classList.add('active');
+            
+            this.updateVisualization();
+        },
+        
+        // Update the visualization
+        updateVisualization: function() {
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (this.values.length === 0) return;
+            
+            // Calculate the pattern based on current mode
+            if (currentPattern === 'circle') {
+                this.drawCirclePattern();
+            } else if (currentPattern === 'spiral') {
+                this.drawSpiralPattern();
+            } else if (currentPattern === 'wave') {
+                this.drawWavePattern();
+            }
+        },
+        
+        // Draw a circle pattern using pi values
+        drawCirclePattern: function() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxRadius = Math.min(canvas.width, canvas.height) * 0.45;
+            
+            // Draw background circle
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Draw each point from pi calculations
+            this.values.forEach((value, index) => {
+                const angle = value.result % (2 * Math.PI);
+                const normalizedInput = Math.min(Math.abs(value.input), 100) / 100;
+                const radius = maxRadius * normalizedInput;
+                
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                
+                // Change color based on position in sequence
+                const pointHue = (index * 7) % 360;
+                ctx.fillStyle = `hsl(${pointHue}, 70%, 60%)`;
+                
+                // Draw the point
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Connect points
+                if (index > 0) {
+                    const prevValue = this.values[index - 1];
+                    const prevAngle = prevValue.result % (2 * Math.PI);
+                    const prevNormalizedInput = Math.min(Math.abs(prevValue.input), 100) / 100;
+                    const prevRadius = maxRadius * prevNormalizedInput;
+                    
+                    const prevX = centerX + prevRadius * Math.cos(prevAngle);
+                    const prevY = centerY + prevRadius * Math.sin(prevAngle);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(prevX, prevY);
+                    ctx.lineTo(x, y);
+                    ctx.strokeStyle = `hsla(${pointHue}, 70%, 60%, 0.5)`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            });
+        },
+        
+        // Draw a spiral pattern using pi values
+        drawSpiralPattern: function() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxRadius = Math.min(canvas.width, canvas.height) * 0.45;
+            
+            // Draw spiral guideline
+            ctx.beginPath();
+            for (let angle = 0; angle < 8 * Math.PI; angle += 0.1) {
+                const radius = maxRadius * angle / (8 * Math.PI);
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                
+                if (angle === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.strokeStyle = '#eee';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Draw each point
+            this.values.forEach((value, index) => {
+                const angle = value.result;
+                const radius = maxRadius * (index / Math.max(20, this.values.length));
+                
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                
+                // Change color based on position
+                const pointHue = (value.result * 30) % 360;
+                ctx.fillStyle = `hsl(${pointHue}, 80%, 60%)`;
+                
+                // Draw the point
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Connect points
+                if (index > 0) {
+                    const prevValue = this.values[index - 1];
+                    const prevAngle = prevValue.result;
+                    const prevRadius = maxRadius * ((index - 1) / Math.max(20, this.values.length));
+                    
+                    const prevX = centerX + prevRadius * Math.cos(prevAngle);
+                    const prevY = centerY + prevRadius * Math.sin(prevAngle);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(prevX, prevY);
+                    ctx.lineTo(x, y);
+                    ctx.strokeStyle = `hsla(${pointHue}, 80%, 60%, 0.6)`;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            });
+        },
+        
+        // Draw a wave pattern using pi values
+        drawWavePattern: function() {
+            const height = canvas.height;
+            const width = canvas.width;
+            
+            // Draw gridlines
+            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = '#eee';
+            ctx.beginPath();
+            for (let y = 0; y < height; y += 40) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+            }
+            for (let x = 0; x < width; x += 40) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+            }
+            ctx.stroke();
+            
+            // Draw each point
+            this.values.forEach((value, index) => {
+                const x = (index / Math.max(20, this.values.length)) * width;
+                const y = height / 2 + (Math.sin(value.result) * height / 4);
+                
+                // Change color based on position
+                const pointHue = (value.result * 30) % 360;
+                ctx.fillStyle = `hsl(${pointHue}, 80%, 60%)`;
+                
+                // Draw the point
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Connect points
+                if (index > 0) {
+                    const prevValue = this.values[index - 1];
+                    const prevX = ((index - 1) / Math.max(20, this.values.length)) * width;
+                    const prevY = height / 2 + (Math.sin(prevValue.result) * height / 4);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(prevX, prevY);
+                    ctx.lineTo(x, y);
+                    ctx.strokeStyle = `hsla(${pointHue}, 80%, 60%, 0.6)`;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            });
+        }
+    };
 
     // Update createDownloadableURL function
     function createDownloadableURL() {
@@ -475,6 +763,34 @@
         chatContainer.appendChild(div);
         chatContainer.scrollTop = chatContainer.scrollHeight;
         console.log(`Message (${type}):`, text);
+        
+        // Extract calculation results for visualization
+        if (type === 'received' && text.startsWith('Result:')) {
+            const resultStr = text.replace('Result:', '').trim();
+            // Get the last sent message as input
+            const sentMessages = document.querySelectorAll('.message.sent');
+            if (sentMessages.length > 0) {
+                const lastSent = sentMessages[sentMessages.length - 1];
+                const inputStr = lastSent.innerText.replace('Sent:', '').trim();
+                window.piViz.addValue(inputStr, resultStr);
+            }
+        } else if (type === 'received' && text.startsWith('Calculating:')) {
+            // Extract the input and result from calculation message
+            const match = text.match(/Calculating: π \* ([\d.]+) = ([\d.]+)/);
+            if (match && match[1] && match[2]) {
+                window.piViz.addValue(match[1], match[2]);
+            }
+        } else if (type === 'sent') {
+            // Also extract the input value from sent messages to prepare for result
+            const inputStr = text.replace('Sent:', '').trim();
+            const input = parseFloat(inputStr);
+            
+            // If this is a local calculation (we're the calculator), add the visualization point immediately
+            if (!window.connection || !window.peerState.isConnected) {
+                const result = input * Math.PI;
+                window.piViz.addValue(input, result);
+            }
+        }
     };
 
     async function createPeerConnection() {
@@ -623,6 +939,12 @@
                     });
                     setupConnection(newConn);
                 }, 1000);
+            } else {
+                // If no peer ID is set, become a sharing instance
+                document.getElementById("shareButton").disabled = false;
+                document.getElementById("shareButton").style.display = 'block';
+                document.getElementById("qrSection").style.display = 'block';
+                window.updateStatus("Ready! Share this instance with others.");
             }
         });
     }
@@ -850,19 +1172,23 @@
                         serialization: 'json'
                     });
                     setupConnection(connection);
-                } catch (err) {
-                    window.updateStatus("Connection failed. Retrying...");
+                    
+                    // Set a timeout to check if connection was successful
                     setTimeout(() => {
-                        try {
-                            connection = peer.connect(targetPeerId, {
-                                reliable: true,
-                                serialization: 'json'
-                            });
-                            setupConnection(connection);
-                        } catch (retryErr) {
-                            window.updateStatus("Connection failed after retry.");
+                        if (!window.peerState.isConnected) {
+                            window.updateStatus("Connection failed. Becoming a sharing instance.");
+                            // If connection failed, become a sharing instance
+                            document.getElementById("shareButton").disabled = false;
+                            document.getElementById("shareButton").style.display = 'block';
+                            document.getElementById("qrSection").style.display = 'block';
                         }
-                    }, 2000);
+                    }, 5000); // 5 seconds timeout
+                } catch (err) {
+                    window.updateStatus("Connection failed. Becoming a sharing instance.");
+                    // If connection failed, become a sharing instance
+                    document.getElementById("shareButton").disabled = false;
+                    document.getElementById("shareButton").style.display = 'block';
+                    document.getElementById("qrSection").style.display = 'block';
                 }
             } else {
                 // This is the original instance
@@ -872,6 +1198,11 @@
         } catch (err) {
             window.updateStatus(`Error: ${err.message}`);
             console.error(err);
+            
+            // On any error, ensure we can share this instance
+            document.getElementById("shareButton").disabled = false;
+            document.getElementById("shareButton").style.display = 'block';
+            document.getElementById("qrSection").style.display = 'block';
         }
     }
 
@@ -881,11 +1212,30 @@
         const message = document.getElementById("messageInput").value.trim();
         if (!message) return;
 
-        try {
-            document.getElementById("messageInput").value = "";
+        document.getElementById("messageInput").value = "";
+        
+        // If there's a connection, use manager to send message
+        if (manager && window.peerState.isConnected) {
             await manager.send_message(message);
-        } catch (err) {
-            status.textContent = `Send error: ${err.message}`;
+        } else {
+            // If no connection, perform local calculation
+            try {
+                const number = parseFloat(message);
+                if (isNaN(number)) {
+                    window.updateStatus("Please enter a valid number");
+                    return;
+                }
+                
+                window.addMessage(`Sent: ${number.toFixed(6)}`, "sent");
+                const result = number * Math.PI;
+                
+                // Add a small delay to simulate network communication
+                setTimeout(() => {
+                    window.addMessage(`Result: ${result.toFixed(6)}`, "received");
+                }, 300);
+            } catch (err) {
+                window.updateStatus(`Calculation error: ${err.message}`);
+            }
         }
     }
 
@@ -1446,7 +1796,37 @@
         });
     });
 
-    // ...rest of the JavaScript code...
+    // Add these event listeners right after the piViz definition
+    document.addEventListener('DOMContentLoaded', function() {
+        // Pattern button event listeners
+        document.getElementById('patternCircle').addEventListener('click', function() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            window.piViz.setPattern('circle');
+        });
+        
+        document.getElementById('patternSpiral').addEventListener('click', function() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            window.piViz.setPattern('spiral');
+        });
+        
+        document.getElementById('patternWave').addEventListener('click', function() {
+            window.piViz.setPattern('wave');
+        });
+        
+        document.getElementById('clearCanvas').addEventListener('click', function() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            window.piViz.clearValues();
+        });
+    });
 </script>
 </body>
 </html>
